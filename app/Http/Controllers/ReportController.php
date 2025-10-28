@@ -15,16 +15,20 @@ class ReportController extends Controller
         $start = $request->input('start_date');
         $end   = $request->input('end_date');
 
-        $query = Ticket::query();
+        $query = Ticket::with('takenByUser')->orderBy('created_at', 'desc');
 
-        if ($start && $end) {
-            $query->whereBetween('created_at', [$start, $end]);
+        if ($start) {
+            $query->whereDate('created_at', '>=', $start);
+        }
+        if ($end) {
+            $query->whereDate('created_at', '<=', $end);
         }
 
-        $tickets = $query->orderBy('created_at', 'desc')->get();
+        $tickets = $query->get();
 
         return view('reports.index', compact('tickets', 'start', 'end'));
     }
+
 
     public function exportExcel(Request $request)
     {
