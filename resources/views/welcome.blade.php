@@ -199,6 +199,105 @@
         </p>
     </footer>
 
+    {{-- 🌟 Modal Form Tambah Ticket --}}
+    <div x-show="showModal" x-transition
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-8 relative mx-3 overflow-y-auto max-h-[90vh]">
+            {{-- Header Modal --}}
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-blue-700 flex items-center gap-2">
+                    📝 Buat Ticket Baru
+                </h2>
+                <button @click="showModal = false" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+                    &times;
+                </button>
+            </div>
+
+            {{-- Form Ticket --}}
+            <form method="POST" action="{{ route('tickets.store') }}" class="space-y-6">
+                @csrf
+
+                {{-- GRID WRAPPER --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Nama --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Nama</label>
+                        <input name="nama" type="text"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                    </div>
+
+                    {{-- Email --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Email</label>
+                        <input name="email" type="email"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                    </div>
+
+                    {{-- Cabang --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Cabang</label>
+                        <select name="cabang"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                            <option value="">Pilih Cabang</option>
+                            <option>Head Office</option>
+                            <option>Jakarta</option>
+                            <option>Surabaya</option>
+                            <option>Samarinda</option>
+                            <option>Palembang</option>
+                            <option>Banjarmasin</option>
+                            <option>Pontianak</option>
+                            <option>Sulawesi</option>
+                        </select>
+                    </div>
+
+                    {{-- Kategori --}}
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-1">Kategori</label>
+                        <select name="category"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                            <option value="">Pilih Kategori</option>
+                            <option value="software">Software</option>
+                            <option value="hardware">Hardware</option>
+                        </select>
+                    </div>
+
+                    {{-- Judul Ticket (Full width) --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">Judul Ticket</label>
+                        <input name="title" type="text"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            required>
+                    </div>
+
+                    {{-- Deskripsi (Full width) --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">Deskripsi Masalah</label>
+                        <textarea name="description" rows="4"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                            required></textarea>
+                    </div>
+                </div>
+
+                {{-- Tombol Aksi --}}
+                <div class="flex justify-end space-x-3 pt-6 border-t">
+                    <button type="button" @click="showModal = false"
+                        class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg font-medium transition-all">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold transition-all">
+                        Kirim
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     {{-- Toast --}}
     @if (session('success'))
         <script>
