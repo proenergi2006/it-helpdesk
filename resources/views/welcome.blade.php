@@ -52,7 +52,6 @@
             <div class="flex items-center gap-3">
                 <img src="{{ asset('images/proenergi-logo.png') }}" alt="Pro Energi Logo"
                     class="h-10 w-auto md:h-12 object-contain">
-
                 <div>
                     <h1 class="text-2xl md:text-3xl font-extrabold text-blue-700 flex items-center gap-2">
                         Antrian Helpdesk IT
@@ -69,7 +68,6 @@
                 <div class="text-right text-xs md:text-sm text-gray-500" id="clock"></div>
             </div>
         </div>
-
 
         {{-- Panel Antrian --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -120,23 +118,22 @@
                 <div class="text-3xl font-bold">{{ $totalToday }}</div>
                 <p class="text-sm font-medium">Ticket Hari Ini</p>
             </div>
-
             <div class="col-span-12 md:col-span-4 bg-yellow-100 text-yellow-800 p-4 rounded-xl text-center shadow-sm">
                 <div class="text-3xl font-bold">{{ $openCount }}</div>
                 <p class="text-sm font-medium">Menunggu</p>
             </div>
-
             <div class="col-span-12 md:col-span-4 bg-green-100 text-green-800 p-4 rounded-xl text-center shadow-sm">
                 <div class="text-3xl font-bold">{{ $resolvedCount }}</div>
                 <p class="text-sm font-medium">Selesai</p>
             </div>
         </div>
 
-
         {{-- Tabel Ticket --}}
         <div class="bg-white rounded-2xl shadow p-4 md:p-6">
-            <h2 class="text-xl md:text-2xl font-semibold text-blue-700 mb-4 flex items-center gap-2">📋 Daftar Ticket
-                Antrian</h2>
+            <h2 class="text-xl md:text-2xl font-semibold text-blue-700 mb-4 flex items-center gap-2">
+                📋 Daftar Ticket Antrian
+            </h2>
+
             <div class="overflow-x-auto">
                 <table id="ticketTable" class="min-w-full text-xs md:text-sm text-gray-700 border-collapse">
                     <thead class="bg-blue-100 text-blue-800">
@@ -147,6 +144,7 @@
                             <th class="p-2 text-left">Cabang</th>
                             <th class="p-2 text-left">Kategori</th>
                             <th class="p-2 text-left">Status</th>
+                            <th class="p-2 text-left">Dikerjakan Oleh</th>
                             <th class="p-2 text-left">Waktu</th>
                         </tr>
                     </thead>
@@ -163,21 +161,24 @@
                                 <td class="p-2">
                                     <span
                                         class="px-3 py-1 rounded-full text-white text-xs font-semibold
-                                    {{ $ticket->status === 'open'
-                                        ? 'bg-yellow-500'
-                                        : ($ticket->status === 'in_progress'
-                                            ? 'bg-blue-500'
-                                            : ($ticket->status === 'resolved'
-                                                ? 'bg-green-600'
-                                                : 'bg-gray-400')) }}">
+                                        {{ $ticket->status === 'open'
+                                            ? 'bg-yellow-500'
+                                            : ($ticket->status === 'in_progress'
+                                                ? 'bg-blue-500'
+                                                : ($ticket->status === 'resolved'
+                                                    ? 'bg-green-600'
+                                                    : 'bg-gray-400')) }}">
                                         {{ ucfirst($ticket->status) }}
                                     </span>
+                                </td>
+                                <td class="p-2">
+                                    {{ $ticket->takenByUser?->name ?? '-' }}
                                 </td>
                                 <td class="p-2">{{ $ticket->created_at->format('d/m/Y H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-6 text-gray-500">Belum ada ticket</td>
+                                <td colspan="8" class="text-center py-6 text-gray-500">Belum ada ticket</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -186,63 +187,7 @@
         </div>
     </div>
 
-    {{-- Modal Buat Ticket --}}
-    <div x-show="showModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-        x-transition>
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 relative mx-3">
-            <h2 class="text-xl font-semibold text-blue-700 mb-4">📝 Buat Ticket Baru</h2>
-            <form method="POST" action="{{ route('tickets.store') }}" class="space-y-4">
-                @csrf
-                <div>
-                    <label class="block text-gray-700 font-medium">Nama</label>
-                    <input name="nama" type="text" class="mt-1 block w-full border-gray-300 rounded-md" required>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium">Email</label>
-                    <input name="email" type="email" class="mt-1 block w-full border-gray-300 rounded-md" required>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium">Cabang</label>
-                    <select name="cabang" class="mt-1 block w-full border-gray-300 rounded-md" required>
-                        <option value="">Pilih Cabang</option>
-                        <option>Head Office</option>
-                        <option>Jakarta</option>
-                        <option>Surabaya</option>
-                        <option>Samarinda</option>
-                        <option>Palembang</option>
-                        <option>Banjarmasin</option>
-                        <option>Pontianak</option>
-                        <option>Sulawesi</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium">Judul Ticket</label>
-                    <input name="title" type="text" class="mt-1 block w-full border-gray-300 rounded-md"
-                        required>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium">Kategori</label>
-                    <select name="category" class="mt-1 block w-full border-gray-300 rounded-md" required>
-                        <option value="">Pilih Kategori</option>
-                        <option value="software">Software</option>
-                        <option value="hardware">Hardware</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-gray-700 font-medium">Deskripsi Masalah</label>
-                    <textarea name="description" rows="4" class="mt-1 block w-full border-gray-300 rounded-md" required></textarea>
-                </div>
-
-                <div class="flex justify-end space-x-2 pt-4">
-                    <button type="button" @click="showModal = false"
-                        class="bg-gray-300 px-4 py-2 rounded-lg">Batal</button>
-                    <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold">Kirim</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    {{-- Footer --}}
     <footer class="mt-10 text-center text-gray-500 text-sm py-6 border-t border-gray-200">
         <div class="flex flex-col md:flex-row justify-center items-center gap-2">
             <img src="{{ asset('images/proenergi-logo.png') }}" alt="Pro Energi" class="h-6 w-auto opacity-70">
@@ -293,32 +238,36 @@
             const hardware = data.filter(t => t.category === 'hardware' && t.status === 'open').slice(0, 2);
 
             sPanel.innerHTML = software.map(t => `
-        <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
-            <div class="text-3xl font-extrabold mb-1">#S${String(t.id).padStart(3,'0')}</div>
-            <div class="text-base font-semibold truncate">${t.title}</div>
-            <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
-            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
-        </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
+                <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
+                    <div class="text-3xl font-extrabold mb-1">#S${String(t.id).padStart(3,'0')}</div>
+                    <div class="text-base font-semibold truncate">${t.title}</div>
+                    <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
+                </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
             hPanel.innerHTML = hardware.map(t => `
-        <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
-            <div class="text-3xl font-extrabold mb-1">#H${String(t.id).padStart(3,'0')}</div>
-            <div class="text-base font-semibold truncate">${t.title}</div>
-            <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
-            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
-        </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
+                <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
+                    <div class="text-3xl font-extrabold mb-1">#H${String(t.id).padStart(3,'0')}</div>
+                    <div class="text-base font-semibold truncate">${t.title}</div>
+                    <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
+                </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
             tbody.innerHTML = data.map(t => `
-        <tr class="border-b hover:bg-blue-50 transition">
-            <td class="p-2 font-semibold text-blue-700">${t.category[0].toUpperCase()}${String(t.id).padStart(3,'0')}</td>
-            <td class="p-2">${t.nama ?? '-'}</td>
-            <td class="p-2">${t.title}</td>
-            <td class="p-2">${t.cabang}</td>
-            <td class="p-2 capitalize">${t.category}</td>
-            <td class="p-2"><span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
-                t.status==='open'?'bg-yellow-500':t.status==='in_progress'?'bg-blue-500':t.status==='resolved'?'bg-green-600':'bg-gray-400'}">${t.status}</span></td>
-            <td class="p-2">${new Date(t.created_at).toLocaleString('id-ID')}</td>
-        </tr>`).join('');
+                <tr class="border-b hover:bg-blue-50 transition">
+                    <td class="p-2 font-semibold text-blue-700">${t.category[0].toUpperCase()}${String(t.id).padStart(3,'0')}</td>
+                    <td class="p-2">${t.nama ?? '-'}</td>
+                    <td class="p-2">${t.title}</td>
+                    <td class="p-2">${t.cabang}</td>
+                    <td class="p-2 capitalize">${t.category}</td>
+                    <td class="p-2">
+                        <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
+                            t.status==='open'?'bg-yellow-500':t.status==='in_progress'?'bg-blue-500':t.status==='resolved'?'bg-green-600':'bg-gray-400'
+                        }">${t.status}</span>
+                    </td>
+                    <td class="p-2">${t.taken_by_name ?? '-'}</td>
+                    <td class="p-2">${new Date(t.created_at).toLocaleString('id-ID')}</td>
+                </tr>`).join('');
         }
         refreshData();
         setInterval(refreshData, 10000);
@@ -326,7 +275,7 @@
         $(document).ready(() => $('#ticketTable').DataTable({
             pageLength: 5,
             order: [
-                [6, 'desc']
+                [7, 'desc']
             ],
             language: {
                 search: "🔍 Cari:",
