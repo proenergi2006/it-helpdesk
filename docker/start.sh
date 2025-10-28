@@ -1,4 +1,4 @@
-                                                            start.sh
+
 #!/bin/sh
 
 # Start PHP-FPM in background

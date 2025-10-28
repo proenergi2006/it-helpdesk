@@ -1,5 +1,4 @@
-                                                        docker-compose.yml
-version: '3.9'
+version: "3.9"
 
 services:
   Helpdesk:
@@ -11,4 +10,4 @@ services:
     #user: "33:33" # user www-data (optional)
     volumes:
       - .:/var/www/
-     # - ./docker/app/storage:/var/www/storage
+      # - ./docker/app/storage:/var/www/storage
