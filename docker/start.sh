@@ -1,4 +1,4 @@
-GNU nano 6.2                                                              start.sh
+                                                            start.sh
 #!/bin/sh
 
 # Start PHP-FPM in background
