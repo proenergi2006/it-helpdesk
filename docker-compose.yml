@@ -1,0 +1,14 @@
+GNU nano 6.2                                                         docker-compose.yml
+version: '3.9'
+
+services:
+  Helpdesk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8100:80"
+    #user: "33:33" # user www-data (optional)
+    volumes:
+      - .:/var/www/
+     # - ./docker/app/storage:/var/www/storage
