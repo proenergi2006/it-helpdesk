@@ -33,14 +33,17 @@ class ReportController extends Controller
 
     public function exportPDF(Request $request)
     {
-        $tickets = Ticket::query()
-            ->when(
-                $request->start_date && $request->end_date,
-                fn($q) =>
-                $q->whereBetween('created_at', [$request->start_date, $request->end_date])
-            )->get();
+        $start = $request->start_date;
+        $end = $request->end_date;
 
-        $pdf = Pdf::loadView('reports.pdf', compact('tickets'));
-        return $pdf->download('report_tickets.pdf');
+        $query = Ticket::with('takenByUser')
+            ->when($start, fn($q) => $q->whereDate('created_at', '>=', $start))
+            ->when($end, fn($q) => $q->whereDate('created_at', '<=', $end))
+            ->orderBy('created_at', 'desc');
+
+        $tickets = $query->get();
+
+        $pdf = Pdf::loadView('reports.pdf', compact('tickets', 'start', 'end'))->setPaper('a4', 'landscape');
+        return $pdf->download('laporan_tiket_' . now()->format('Ymd_His') . '.pdf');
     }
 }

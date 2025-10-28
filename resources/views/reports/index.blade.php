@@ -52,23 +52,33 @@
                                 <th class="p-3 text-left">Cabang</th>
                                 <th class="p-3 text-left">Kategori</th>
                                 <th class="p-3 text-left">Status</th>
+                                <th class="p-3 text-left">Dikerjakan Oleh</th>
                                 <th class="p-3 text-left">Tanggal</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($tickets as $t)
-                                <tr class="border-b hover:bg-blue-50">
+                                <tr class="border-b hover:bg-blue-50 transition">
                                     <td class="p-3 font-semibold text-blue-700">#{{ $t->id }}</td>
                                     <td class="p-3">{{ $t->nama }}</td>
                                     <td class="p-3">{{ $t->title ?: '-' }}</td>
                                     <td class="p-3">{{ $t->cabang }}</td>
                                     <td class="p-3 capitalize">{{ $t->category }}</td>
-                                    <td class="p-3">{{ ucfirst($t->status) }}</td>
+                                    <td class="p-3">
+                                        <span
+                                            class="px-3 py-1 rounded-full text-white text-xs font-semibold
+                                            {{ $t->status === 'open' ? 'bg-yellow-500' : ($t->status === 'in_progress' ? 'bg-blue-500' : 'bg-green-600') }}">
+                                            {{ ucfirst($t->status) }}
+                                        </span>
+                                    </td>
+                                    <td class="p-3">
+                                        {{ $t->takenByUser?->name ?? '-' }}
+                                    </td>
                                     <td class="p-3">{{ $t->created_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-gray-500">Tidak ada data</td>
+                                    <td colspan="8" class="text-center py-4 text-gray-500">Tidak ada data</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -76,7 +86,6 @@
                 </div>
 
             </div>
-
         </div>
     </div>
 </x-app-layout>
