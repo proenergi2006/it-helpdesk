@@ -147,7 +147,18 @@
                                         </span>
                                     </td>
 
-                                    <td class="p-2">{{ $ticket->takenByUser?->name ?? '-' }}</td>
+                                    <td class="p-2">{{ $ticket->takenByUser?->name ?? '-' }} <p>
+
+                                            @if ($ticket->status === 'resolved' && $ticket->resolution_note)
+                                                <button type="button"
+                                                    class="mt-1 text-blue-600 text-xs underline hover:text-blue-800 btn-view-note"
+                                                    data-note="{{ e($ticket->resolution_note) }}"
+                                                    data-id="{{ $ticket->id }}">
+                                                    📄Detail
+                                                </button>
+                                            @endif
+
+                                    </td>
                                     <td class="p-2">{{ $ticket->started_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                     <td class="p-2">{{ $ticket->finished_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                     <td class="p-2">{{ $durasi }}</td>
@@ -254,6 +265,38 @@
         </div>
     </div>
 
+    <!-- Modal Catatan -->
+    <div id="noteModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-96 p-4">
+            <h2 class="text-lg font-semibold text-blue-700 mb-2">📝 Catatan Penyelesaian</h2>
+            <div id="noteContent" class="text-gray-700 text-sm whitespace-pre-line border p-2 rounded-md bg-gray-50">
+            </div>
+            <div class="text-right mt-4">
+                <button id="closeNoteModal"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+
+    <style>
+        #noteModal {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+
     @push('scripts')
         {{-- Tambahkan jQuery dulu (wajib sebelum DataTables) --}}
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -286,6 +329,23 @@
                     },
                     responsive: true,
                     autoWidth: false,
+                });
+
+                // === LIHAT CATATAN PENYELESAIAN ===
+                $(document).on('click', '.btn-view-note', function() {
+                    const note = $(this).data('note');
+                    $('#noteContent').text(note);
+                    $('#noteModal').removeClass('hidden');
+                });
+
+                $('#closeNoteModal').on('click', function() {
+                    $('#noteModal').addClass('hidden');
+                });
+
+                $(document).on('click', function(e) {
+                    if ($(e.target).is('#noteModal')) {
+                        $('#noteModal').addClass('hidden');
+                    }
                 });
 
                 // === FILTER DROPDOWN (masih jalan bareng DataTables) ===
