@@ -93,7 +93,10 @@ class TicketController extends Controller
      */
     public function dashboard()
     {
-        $tickets = Ticket::with('takenByUser')->latest()->get();
+        $tickets = Ticket::with('takenByUser')
+            ->orderBy('created_at', 'desc') // tiket terbaru paling atas
+            ->get();
+
         $cabangs = Ticket::select('cabang')->distinct()->pluck('cabang');
 
         return view('dashboard', [
