@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('nama');
             $table->string('email');
             $table->string('title');
-            $table->enum('category', ['software', 'hardware'])->nullable();
+            $table->enum('category', ['software', 'hardware', 'network&multimedia'])->nullable();
             $table->text('description')->nullable();
             $table->enum('status', ['open', 'in_progress', 'resolved', 'closed'])->default('open');
             $table->timestamps();
