@@ -15,6 +15,8 @@ Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store
 // Optional: API route untuk auto-refresh
 Route::get('/api/tickets', [TicketController::class, 'apiList'])->name('tickets.api');
 
+Route::post('/chat/ask', [TicketController::class, 'chatAsk'])->name('chat.ask');
+
 // Route default bawaan Breeze (biarkan untuk dashboard login)
 
 Route::get('/dashboard', [TicketController::class, 'dashboard'])->name('dashboard');

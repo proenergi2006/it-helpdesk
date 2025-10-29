@@ -193,4 +193,55 @@ class TicketController extends Controller
             'message' => 'Tiket berhasil dihapus!'
         ]);
     }
+
+
+    public function chatAsk(Request $request)
+    {
+        $question = strtolower(trim($request->input('question')));
+
+        if (!$question) {
+            return response()->json(['answer' => 'Silakan ketik pertanyaan Anda terlebih dahulu.']);
+        }
+
+        // Ambil semua tiket resolved yang punya catatan penyelesaian
+        $tickets = \App\Models\Ticket::where('status', 'resolved')
+            ->whereNotNull('resolution_note')
+            ->get(['title', 'description', 'resolution_note']);
+
+        $bestMatch = null;
+        $bestScore = 0;
+
+        // Tokenisasi pertanyaan user
+        $questionWords = preg_split('/\s+/', $question);
+
+        foreach ($tickets as $t) {
+            // Gabungkan semua teks tiket jadi satu string dan ubah ke lowercase
+            $text = strtolower($t->title . ' ' . $t->description . ' ' . $t->resolution_note);
+            $textWords = preg_split('/\s+/', $text);
+
+            // Hitung jumlah kata yang sama antara pertanyaan dan teks
+            $commonWords = count(array_intersect($questionWords, $textWords));
+            $totalWords = count($questionWords);
+
+            // Hitung skor relevansi (% dari kata yang cocok)
+            $score = ($totalWords > 0) ? ($commonWords / $totalWords) * 100 : 0;
+
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $bestMatch = $t;
+            }
+        }
+
+        if ($bestMatch && $bestScore >= 25) { // ambil jika cocok minimal 25%
+            return response()->json([
+                'answer' => $bestMatch->resolution_note,
+                'confidence' => round($bestScore, 1)
+            ]);
+        }
+
+        return response()->json([
+            'answer' => 'Maaf, saya belum menemukan solusi yang sesuai. Tim IT akan segera membantu Anda.',
+            'confidence' => 0
+        ]);
+    }
 }

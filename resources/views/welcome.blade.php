@@ -41,6 +41,32 @@
                 margin-bottom: .5rem;
             }
         }
+
+        #chatbot {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Scroll bar halus */
+        #chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
@@ -310,6 +336,109 @@
             </form>
         </div>
     </div>
+
+    <div id="chat-toggle"
+        class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 flex items-center justify-center rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all">
+        💬
+    </div>
+
+    <!-- Kotak chat (awalnya disembunyikan) -->
+    <div id="chatbot"
+        class="hidden fixed bottom-20 right-6 w-80 bg-white rounded-xl shadow-lg border border-gray-200">
+        <div class="bg-blue-600 text-white p-3 rounded-t-xl font-semibold flex justify-between items-center">
+            <span>💬 Bantuan Otomatis IT</span>
+            <button id="chat-close" class="text-white hover:text-gray-200 text-sm">✖</button>
+        </div>
+        <div id="chat-messages" class="p-3 h-60 overflow-y-auto text-sm space-y-2">
+            <div class="text-gray-500 italic">Ketik pertanyaan seputar masalah Anda...</div>
+        </div>
+        <div class="p-3 border-t flex">
+            <input id="chat-input" type="text" class="flex-1 border-gray-300 rounded-l-md px-2 py-1 text-sm"
+                placeholder="Tulis pertanyaan...">
+            <button id="chat-send" class="bg-blue-600 text-white px-3 py-1 rounded-r-md text-sm">Kirim</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const chatToggle = document.getElementById("chat-toggle");
+            const chatBox = document.getElementById("chatbot");
+            const chatClose = document.getElementById("chat-close");
+            const input = document.getElementById("chat-input");
+            const sendBtn = document.getElementById("chat-send");
+            const chatMessages = document.getElementById("chat-messages");
+
+            let hasOpened = false;
+
+            // === buka/tutup chat ===
+            chatToggle.addEventListener("click", () => {
+                chatBox.classList.toggle("hidden");
+                chatToggle.classList.toggle("hidden");
+
+                // jika pertama kali dibuka, kirim salam otomatis
+                if (!hasOpened) {
+                    hasOpened = true;
+                    setTimeout(() => {
+                        chatMessages.innerHTML += `
+                    <div class="text-left bg-gray-100 rounded-md px-2 py-1">
+                        🤖 Halo! Ada yang bisa saya bantu?
+                    </div>
+                `;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }, 300);
+                }
+            });
+
+            chatClose.addEventListener("click", () => {
+                chatBox.classList.add("hidden");
+                chatToggle.classList.remove("hidden");
+            });
+
+            // === fungsi kirim pesan ===
+            async function sendMessage() {
+                const question = input.value.trim();
+                if (!question) return;
+
+                chatMessages.innerHTML += `<div class="text-right text-blue-600">🧑‍💻 ${question}</div>`;
+                input.value = '';
+                chatMessages.innerHTML += `<div id="loading" class="text-gray-400 italic">Mengetik...</div>`;
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                try {
+                    const res = await fetch("{{ route('chat.ask') }}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            question
+                        })
+                    });
+
+                    const data = await res.json();
+                    document.getElementById("loading").remove();
+
+                    chatMessages.innerHTML += `
+                <div class="text-left bg-gray-100 rounded-md px-2 py-1">
+                    🤖 ${data.answer}
+                </div>
+            `;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } catch (e) {
+                    document.getElementById("loading").remove();
+                    chatMessages.innerHTML += `<div class="text-red-500">❌ Terjadi kesalahan server.</div>`;
+                }
+            }
+
+            sendBtn.addEventListener("click", sendMessage);
+            input.addEventListener("keypress", e => {
+                if (e.key === "Enter") sendMessage();
+            });
+        });
+    </script>
+
 
 
     {{-- Toast --}}
