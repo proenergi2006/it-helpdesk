@@ -51,7 +51,9 @@ class TicketController extends Controller
             'email'       => 'required|email|max:150',
             'cabang'      => 'required|string|max:50',
             'title'       => 'required|string|max:255',
-            'category'    => 'required|in:software,hardware',
+            'category' => 'required|in:software,hardware,network&multimedia',
+
+            'klasifikasi' => 'required|in:Incident,Request',
             'description' => 'required|string',
         ]);
 
@@ -109,22 +111,75 @@ class TicketController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
         $status = $request->status;
-        $user   = Auth::user();
+        $user = Auth::user();
 
-        if (!$user) {
-            return back()->with('error', 'Anda belum login!');
+        $allowedStatuses = [
+            'open',
+            'in_progress',
+            'resolved',
+            'Hold - Third Party',
+            'Hold - Waiting User Response'
+        ];
+
+        if (!in_array($status, $allowedStatuses)) {
+            return response()->json(['success' => false, 'message' => 'Status tidak valid.'], 400);
         }
 
-        if ($status === 'in_progress') {
-            $ticket->taken_by  = $user->id;
+        // waktu otomatis
+        if ($status === 'in_progress' && !$ticket->started_at) {
             $ticket->started_at = now();
-        } elseif ($status === 'resolved') {
+            $ticket->taken_by = $user?->id;
+        }
+
+        // catatan penyelesaian (khusus resolved)
+        if ($status === 'resolved') {
             $ticket->finished_at = now();
+            $ticket->resolution_note = $request->resolution_note ?? '-';
         }
 
         $ticket->status = $status;
         $ticket->save();
 
-        return back()->with('success', 'Status tiket diperbarui oleh ' . $user->name);
+        return back()->with('success', 'Status tiket diperbarui oleh ' . ($user?->name ?? 'System'));
+    }
+
+
+
+
+    public function updatePriority(Request $request, $id)
+    {
+        $request->validate([
+            'priority' => 'required|in:Low,Medium,Critical'
+        ]);
+
+        $ticket = Ticket::findOrFail($id);
+        $ticket->priority = $request->priority;
+        $ticket->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Priority tiket berhasil diperbarui!',
+            'priority' => $ticket->priority
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $ticket = Ticket::findOrFail($id);
+
+        // Hanya bisa hapus jika status open
+        if ($ticket->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tiket hanya bisa dihapus jika status masih OPEN.'
+            ], 400);
+        }
+
+        $ticket->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Tiket berhasil dihapus!'
+        ]);
     }
 }

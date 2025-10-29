@@ -19,15 +19,18 @@ Route::get('/api/tickets', [TicketController::class, 'apiList'])->name('tickets.
 
 Route::get('/dashboard', [TicketController::class, 'dashboard'])->name('dashboard');
 
-Route::middleware('auth', '')->group(function () {
+Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::patch('/tickets/{id}/update-status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
+    Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
     Route::get('/trend', [TrendController::class, 'index'])->name('trend');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('/reports/export/pdf', [ReportController::class, 'exportPDF'])->name('reports.export.pdf');
+    Route::patch('/tickets/{id}/priority', [TicketController::class, 'updatePriority'])
+        ->name('tickets.updatePriority');
+    Route::delete('/tickets/{id}', [TicketController::class, 'destroy'])->name('tickets.destroy');
 });
 
 require __DIR__ . '/auth.php';

@@ -20,6 +20,8 @@ class Ticket extends Model
         'taken_by',
         'started_at',
         'finished_at',
+        'priority',
+        'klasifikasi',
     ];
 
     public function takenByUser()

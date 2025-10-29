@@ -143,6 +143,7 @@
                             <th class="p-2 text-left">Judul Ticket</th>
                             <th class="p-2 text-left">Cabang</th>
                             <th class="p-2 text-left">Kategori</th>
+                            <th class="p-2 text-left">Klasifikasi</th>
                             <th class="p-2 text-left">Status</th>
                             <th class="p-2 text-left">Dikerjakan Oleh</th>
                             <th class="p-2 text-left">Waktu</th>
@@ -158,6 +159,7 @@
                                 <td class="p-2">{{ $ticket->title }}</td>
                                 <td class="p-2">{{ $ticket->cabang }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->category }}</td>
+                                <td class="p-2 capitalize">{{ $ticket->klasifikasi ?? '-' }}</td>
                                 <td class="p-2">
                                     <span
                                         class="px-3 py-1 rounded-full text-white text-xs font-semibold
@@ -262,6 +264,18 @@
                             <option value="">Pilih Kategori</option>
                             <option value="software">Software</option>
                             <option value="hardware">Hardware</option>
+                            <option value="network&multimedia">Network & Multimedia</option>
+                        </select>
+                    </div>
+
+                    {{-- Klasifikasi --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">Klasifikasi</label>
+                        <select name="klasifikasi"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required>
+                            <option value="">Pilih Klasifikasi</option>
+                            <option value="Incident">Incident (Gangguan / Error)</option>
+                            <option value="Request">Request (Permintaan Fitur / Akses)</option>
                         </select>
                     </div>
 
@@ -359,6 +373,7 @@
                     <td class="p-2">${t.title}</td>
                     <td class="p-2">${t.cabang}</td>
                     <td class="p-2 capitalize">${t.category}</td>
+                    <td class="p-2 capitalize">${t.klasifikasi ?? '-'}</td>
                     <td class="p-2">
                         <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
                             t.status==='open'?'bg-yellow-500':t.status==='in_progress'?'bg-blue-500':t.status==='resolved'?'bg-green-600':'bg-gray-400'
