@@ -79,6 +79,7 @@ class TicketController extends Controller
                     'cabang'         => $t->cabang,
                     'category'       => $t->category,
                     'status'         => $t->status,
+                    'klasifikasi'    => $t->klasifikasi,
                     'created_at'     => $t->created_at,
                     'taken_by_name'  => $t->takenByUser->name ?? null,
                 ];
@@ -125,13 +126,13 @@ class TicketController extends Controller
             return response()->json(['success' => false, 'message' => 'Status tidak valid.'], 400);
         }
 
-        // waktu otomatis
+        // Waktu otomatis
         if ($status === 'in_progress' && !$ticket->started_at) {
             $ticket->started_at = now();
             $ticket->taken_by = $user?->id;
         }
 
-        // catatan penyelesaian (khusus resolved)
+        // Catatan penyelesaian
         if ($status === 'resolved') {
             $ticket->finished_at = now();
             $ticket->resolution_note = $request->resolution_note ?? '-';
@@ -140,9 +141,19 @@ class TicketController extends Controller
         $ticket->status = $status;
         $ticket->save();
 
+        // ✅ Selalu kembalikan JSON untuk AJAX
+        if ($request->isJson() || $request->ajax() || $request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Status tiket berhasil diperbarui!',
+                'updated_by' => $user?->name ?? 'System',
+                'status' => $status
+            ], 200);
+        }
+
+        // Fallback (kalau bukan fetch)
         return back()->with('success', 'Status tiket diperbarui oleh ' . ($user?->name ?? 'System'));
     }
-
 
 
 
