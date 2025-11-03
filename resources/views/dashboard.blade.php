@@ -118,10 +118,21 @@
                                         {{ strtoupper(substr($ticket->category, 0, 1)) }}{{ str_pad($ticket->id, 3, '0', STR_PAD_LEFT) }}
                                     </td>
                                     <td class="p-2">{{ $ticket->nama }}</td>
-                                    <td class="p-2">{{ $ticket->title }}</td>
+                                    <td class="p-2">{{ $ticket->title }}
+
+                                    </td>
                                     <td class="p-2">{{ $ticket->cabang }}</td>
                                     <td class="p-2 capitalize">{{ $ticket->category }}</td>
-                                    <td class="p-2 capitalize">{{ $ticket->klasifikasi }}</td>
+                                    <td class="p-2 capitalize">{{ $ticket->klasifikasi }}
+                                        @if ($ticket->description)
+                                            <button type="button"
+                                                class="text-blue-600 text-xs underline hover:text-blue-800 btn-view-desc"
+                                                data-desc="{{ e($ticket->description) }}"
+                                                data-id="{{ $ticket->id }}">
+                                                📄 Deskripsi
+                                            </button>
+                                        @endif
+                                    </td>
 
                                     {{-- PRIORITY DROPDOWN --}}
                                     <td class="p-2">
@@ -261,6 +272,19 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Deskripsi --}}
+    <div id="descModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-96 p-4">
+            <h2 class="text-lg font-semibold text-blue-700 mb-2">📝 Deskripsi Masalah</h2>
+            <div id="descContent" class="text-gray-700 text-sm whitespace-pre-line border p-2 rounded-md bg-gray-50">
+            </div>
+            <div class="text-right mt-4">
+                <button id="closeDescModal"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">Tutup</button>
             </div>
         </div>
     </div>
@@ -555,6 +579,23 @@
                         }
                     }
                 });
+
+                // === LIHAT DESKRIPSI MASALAH ===
+                $(document).on('click', '.btn-view-desc', function() {
+                    const desc = $(this).data('desc');
+                    $('#descContent').text(desc);
+                    $('#descModal').removeClass('hidden');
+                });
+
+                $('#closeDescModal').on('click', function() {
+                    $('#descModal').addClass('hidden');
+                });
+
+                $(document).on('click', function(e) {
+                    if ($(e.target).is('#descModal')) {
+                        $('#descModal').addClass('hidden');
+                    }
+                });
             });
         </script>
 
@@ -563,6 +604,10 @@
             .dataTables_wrapper .dataTables_paginate {
                 margin-top: 10px;
                 text-align: center;
+            }
+
+            #descModal {
+                animation: fadeIn 0.2s ease-in-out;
             }
 
             .dataTables_wrapper .dataTables_length,
