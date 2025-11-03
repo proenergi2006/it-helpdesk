@@ -194,7 +194,6 @@ class TicketController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
-        // Hanya bisa hapus jika status open
         if ($ticket->status !== 'open') {
             return response()->json([
                 'success' => false,

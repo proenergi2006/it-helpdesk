@@ -454,9 +454,11 @@
                     }
                 });
 
-                // === HAPUS TICKET ===
-                $('.btn-delete').on('click', async function() {
+                // === HAPUS TIKET ===
+                $(document).on('click', '.btn-delete', async function() {
                     const id = $(this).data('id');
+                    const row = $(this).closest('tr');
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
                     const result = await Swal.fire({
                         title: 'Hapus Tiket?',
@@ -469,44 +471,48 @@
                         cancelButtonText: 'Batal'
                     });
 
-                    if (result.isConfirmed) {
-                        try {
-                            const res = await fetch(`/tickets/${id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Content-Type': 'application/json'
-                                }
+                    if (!result.isConfirmed) return;
+
+                    try {
+                        const res = await fetch(`/tickets/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        const data = await res.json();
+
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                timer: 1500,
+                                showConfirmButton: false
                             });
 
-                            const data = await res.json();
-
-                            if (data.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil!',
-                                    text: data.message,
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                });
-
-                                table.row($(this).closest('tr')).remove().draw(false);
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Gagal Menghapus',
-                                    text: data.message
-                                });
-                            }
-                        } catch (error) {
+                            // Hapus baris dari DataTable
+                            const table = $('#ticketTable').DataTable();
+                            table.row(row).remove().draw(false);
+                        } else {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Error',
-                                text: 'Terjadi kesalahan server saat menghapus tiket.'
+                                title: 'Gagal Menghapus',
+                                text: data.message
                             });
                         }
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Terjadi kesalahan server atau koneksi.'
+                        });
                     }
                 });
+
 
                 // === SWEETALERT RESOLVED NOTE ===
                 $(document).on('click', '.btn-finish', async function() {
