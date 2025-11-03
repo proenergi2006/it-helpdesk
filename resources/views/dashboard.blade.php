@@ -487,7 +487,7 @@
                 });
 
                 // === SWEETALERT RESOLVED NOTE ===
-                $('.btn-finish').on('click', async function() {
+                $(document).on('click', '.btn-finish', async function() {
                     const id = $(this).data('id');
 
                     const {
@@ -508,19 +508,24 @@
 
                     if (note) {
                         try {
+                            const csrfToken = document
+                                .querySelector('meta[name="csrf-token"]')
+                                .getAttribute('content');
+
                             const res = await fetch(`/tickets/${id}/status`, {
                                 method: 'PATCH',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json' // ✅ tambahkan baris ini
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json',
                                 },
                                 body: JSON.stringify({
                                     status: 'resolved',
-                                    resolution_note: note
-                                })
+                                    resolution_note: note,
+                                }),
                             });
 
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
                             const data = await res.json();
 
                             if (data.success) {
@@ -529,22 +534,27 @@
                                     title: 'Tiket diselesaikan!',
                                     text: 'Catatan tersimpan sebagai dokumentasi internal.',
                                     timer: 1500,
-                                    showConfirmButton: false
+                                    showConfirmButton: false,
                                 });
                                 setTimeout(() => location.reload(), 1200);
                             } else {
-                                throw new Error('Gagal update');
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Gagal update',
+                                    text: data.message ||
+                                        'Terjadi kesalahan saat memperbarui tiket.',
+                                });
                             }
                         } catch (e) {
+                            console.error(e);
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Gagal menyimpan',
-                                text: 'Terjadi kesalahan saat memperbarui tiket.'
+                                text: 'Terjadi kesalahan saat memperbarui tiket.',
                             });
                         }
                     }
                 });
-
             });
         </script>
 

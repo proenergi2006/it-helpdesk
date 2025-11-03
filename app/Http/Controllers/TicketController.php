@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TicketController extends Controller
 {
@@ -108,9 +109,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * 🔧 Update status tiket oleh tim IT
-     */
     public function updateStatus(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
@@ -144,21 +142,26 @@ class TicketController extends Controller
         $ticket->status = $status;
         $ticket->save();
 
-        // ✅ Selalu kembalikan JSON untuk AJAX
-        if ($request->isJson() || $request->ajax() || $request->expectsJson()) {
+        // Logging untuk debug
+        Log::info('Status tiket diperbarui', [
+            'id' => $id,
+            'status' => $status,
+            'by' => $user?->name ?? 'System'
+        ]);
+
+        // ✅ Selalu kembalikan JSON untuk fetch() dan Ajax
+        if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Status tiket berhasil diperbarui!',
                 'updated_by' => $user?->name ?? 'System',
                 'status' => $status
-            ], 200);
+            ]);
         }
 
-        // Fallback (kalau bukan fetch)
+        // fallback jika bukan AJAX
         return back()->with('success', 'Status tiket diperbarui oleh ' . ($user?->name ?? 'System'));
     }
-
-
 
     public function updatePriority(Request $request, $id)
     {
