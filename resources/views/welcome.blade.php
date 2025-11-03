@@ -516,10 +516,9 @@
         setInterval(refreshData, 10000);
 
         $(document).ready(() => $('#ticketTable').DataTable({
-            pageLength: 5,
-            order: [
-                [7, 'desc']
-            ],
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50, 100],
+            order: [],
             language: {
                 search: "🔍 Cari:",
                 lengthMenu: "Tampilkan _MENU_ tiket",

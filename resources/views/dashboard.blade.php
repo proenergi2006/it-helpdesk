@@ -337,9 +337,7 @@
                 const table = $('#ticketTable').DataTable({
                     pageLength: 10,
                     lengthMenu: [5, 10, 25, 50, 100],
-                    order: [
-                        [9, 'desc']
-                    ], // Kolom ke-10 = "Mulai"
+                    order: [], // ✅ kosongkan agar urutan dari backend dipakai
                     language: {
                         search: "🔍 Cari:",
                         lengthMenu: "Tampilkan _MENU_ tiket per halaman",

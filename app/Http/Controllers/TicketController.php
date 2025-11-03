@@ -95,7 +95,17 @@ class TicketController extends Controller
     public function dashboard()
     {
         $tickets = Ticket::with('takenByUser')
-            ->orderBy('created_at', 'desc') // tiket terbaru paling atas
+            ->orderByRaw("
+            CASE
+                WHEN status = 'open' THEN 1
+                WHEN status = 'in_progress' THEN 2
+                WHEN status = 'Hold - Third Party' THEN 3
+                WHEN status = 'Hold - Waiting User Response' THEN 4
+                WHEN status = 'resolved' THEN 5
+                ELSE 6
+            END
+        ")
+            ->orderBy('created_at', 'desc') // urutkan baru berdasarkan waktu
             ->get();
 
         $cabangs = Ticket::select('cabang')->distinct()->pluck('cabang');
