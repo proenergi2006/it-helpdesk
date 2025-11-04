@@ -23,6 +23,29 @@
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
+
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Nama</label>
+                        <input type="text" name="nama" value="{{ request('nama') }}" placeholder="Cari nama..."
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">Kategori</label>
+                        <select name="category"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Semua</option>
+                            <option value="software" {{ request('category') == 'software' ? 'selected' : '' }}>Software
+                            </option>
+                            <option value="hardware" {{ request('category') == 'hardware' ? 'selected' : '' }}>Hardware
+                            </option>
+                            <option value="network" {{ request('category') == 'network' ? 'selected' : '' }}>Network
+                            </option>
+                            <option value="multimedia" {{ request('category') == 'multimedia' ? 'selected' : '' }}>
+                                Multimedia</option>
+                        </select>
+                    </div>
+
                     <div class="flex flex-wrap gap-2 md:col-span-2">
                         <button
                             class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md flex items-center gap-2 transition-all">
