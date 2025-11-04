@@ -12,9 +12,24 @@
             color: #333;
         }
 
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .header img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 70px;
+        }
+
         h3 {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
         }
 
         p {
@@ -58,9 +73,15 @@
 </head>
 
 <body>
-    <h3>Laporan Tiket Helpdesk IT</h3>
-    <p>Periode: {{ $start ? \Carbon\Carbon::parse($start)->format('d M Y') : '-' }}
-        s/d {{ $end ? \Carbon\Carbon::parse($end)->format('d M Y') : '-' }}</p>
+    <div class="header">
+        {{-- 🖼️ LOGO PERUSAHAAN --}}
+        <img src="{{ public_path('images/proenergi-logo.png') }}" alt="Logo PT Pro Energi">
+        <div style="flex: 1;">
+            <h3>Laporan Tiket Helpdesk IT</h3>
+            <p>Periode: {{ $start ? \Carbon\Carbon::parse($start)->format('d M Y') : '-' }}
+                s/d {{ $end ? \Carbon\Carbon::parse($end)->format('d M Y') : '-' }}</p>
+        </div>
+    </div>
 
     <table>
         <thead>
