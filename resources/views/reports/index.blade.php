@@ -1,9 +1,40 @@
+<style>
+    /* Lebarkan kolom STATUS */
+    table th:nth-child(6),
+    table td:nth-child(6) {
+        min-width: 160px;
+        /* ubah jadi 180px kalau masih sempit */
+        text-align: center;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    /* Biar badge status tetap rapi di tengah */
+    table td:nth-child(6) span {
+        display: inline-block;
+        min-width: 120px;
+        padding: 6px 10px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        color: #fff;
+    }
+
+    /* Rapikan cell */
+    table td,
+    table th {
+        vertical-align: middle;
+    }
+</style>
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight flex items-center gap-2">
             📊 Laporan Tiket
         </h2>
     </x-slot>
+
 
     <div class="py-8 bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
