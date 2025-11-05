@@ -105,7 +105,7 @@
                                 <th class="p-3 text-left">Judul</th>
                                 <th class="p-3 text-left">Cabang</th>
                                 <th class="p-3 text-left">Kategori</th>
-                                <th class="p-3 text-left">Status</th>
+                                <th class="p-3 text-left w-[12rem] text-center">Status</th>
                                 <th class="p-3 text-left">Dikerjakan Oleh</th>
                                 <th class="p-3 text-left">Tanggal</th>
                             </tr>
