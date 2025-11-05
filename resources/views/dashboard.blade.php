@@ -292,16 +292,24 @@
 
     {{-- Modal Deskripsi --}}
     <div id="descModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-lg w-96 p-4">
-            <h2 class="text-lg font-semibold text-blue-700 mb-2">📝 Deskripsi Masalah</h2>
-            <div id="descContent" class="text-gray-700 text-sm whitespace-pre-line border p-2 rounded-md bg-gray-50">
+        <div class="bg-white rounded-xl shadow-lg w-[90%] max-w-2xl p-5 overflow-y-auto max-h-[90vh]">
+            <h2 class="text-lg font-semibold text-blue-700 mb-3">📝 Deskripsi Masalah</h2>
+
+            <!-- Deskripsi -->
+            <div id="descContent"
+                class="text-gray-700 text-sm whitespace-pre-line border p-3 rounded-md bg-gray-50 mb-4">
             </div>
+
+            <!-- Lampiran -->
+            <div id="descAttachments" class="space-y-3"></div>
+
             <div class="text-right mt-4">
                 <button id="closeDescModal"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm">Tutup</button>
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm">Tutup</button>
             </div>
         </div>
     </div>
+
 
     <!-- Modal Catatan -->
     <div id="noteModal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
@@ -666,14 +674,67 @@
                 // === LIHAT DESKRIPSI MASALAH ===
                 $(document).on('click', '.btn-view-desc', function() {
                     const desc = $(this).data('desc');
-                    $('#descContent').text(desc);
+                    const ticketId = $(this).data('id');
+
+                    // tampilkan deskripsi teks
+                    $('#descContent').text(desc || '-');
+
+                    // kosongkan area lampiran
+                    $('#descAttachments').html(
+                        '<p class="text-gray-400 text-sm italic">Memuat lampiran...</p>');
+
+                    // tampilkan modal dulu
                     $('#descModal').removeClass('hidden');
+
+                    // ambil lampiran via AJAX
+                    $.get(`/tickets/${ticketId}/detail`, function(data) {
+                        const attachDiv = $('#descAttachments');
+                        attachDiv.empty();
+
+                        if (data.attachments && data.attachments.length > 0) {
+                            data.attachments.forEach(file => {
+                                const url = `/storage/${file.file_path}`;
+                                const ext = file.file_name.split('.').pop().toLowerCase();
+
+                                if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                                    attachDiv.append(`
+                        <div class="border rounded-md p-2 bg-gray-50 mb-3">
+                            <p class="text-sm text-gray-600 mb-1 font-semibold">📷 ${file.file_name}</p>
+                            <img src="${url}" alt="${file.file_name}" class="max-h-64 rounded-lg shadow mx-auto">
+                        </div>
+                    `);
+                                } else if (ext === 'pdf') {
+                                    attachDiv.append(`
+                        <div class="border rounded-md p-2 bg-gray-50 mb-3">
+                            <p class="text-sm text-gray-600 mb-1 font-semibold">📄 ${file.file_name}</p>
+                            <iframe src="${url}" class="w-full h-64 border rounded-lg"></iframe>
+                        </div>
+                    `);
+                                } else {
+                                    attachDiv.append(`
+                        <div class="border rounded-md p-2 bg-gray-50 mb-3">
+                            <p class="text-sm text-gray-600 mb-1 font-semibold">📎 ${file.file_name}</p>
+                            <a href="${url}" target="_blank" class="text-blue-600 hover:underline text-sm">Lihat / Unduh File</a>
+                        </div>
+                    `);
+                                }
+                            });
+                        } else {
+                            attachDiv.html(
+                                `<p class="text-gray-500 text-sm italic">Tidak ada lampiran.</p>`);
+                        }
+                    }).fail(() => {
+                        $('#descAttachments').html(
+                            `<p class="text-red-500 text-sm italic">Gagal memuat lampiran.</p>`);
+                    });
                 });
 
+                // tombol tutup
                 $('#closeDescModal').on('click', function() {
                     $('#descModal').addClass('hidden');
                 });
 
+                // klik luar modal menutup
                 $(document).on('click', function(e) {
                     if ($(e.target).is('#descModal')) {
                         $('#descModal').addClass('hidden');

@@ -81,6 +81,18 @@ class TicketController extends Controller
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
     }
 
+    public function detail($id)
+    {
+        $ticket = Ticket::with('attachments')->findOrFail($id);
+
+        return response()->json([
+            'attachments' => $ticket->attachments->map(fn($a) => [
+                'file_name' => $a->file_name,
+                'file_path' => $a->file_path,
+            ])
+        ]);
+    }
+
     /**
      * 🔄 API data antrian realtime (dipakai oleh JS untuk auto-refresh)
      */

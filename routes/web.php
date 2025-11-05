@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tickets/{id}/priority', [TicketController::class, 'updatePriority'])
         ->name('tickets.updatePriority');
     Route::delete('/tickets/{id}', [TicketController::class, 'destroy'])->name('tickets.destroy');
+    Route::get('/tickets/{id}/detail', [TicketController::class, 'detail']);
 });
 
 require __DIR__ . '/auth.php';
