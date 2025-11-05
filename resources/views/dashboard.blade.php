@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight flex items-center gap-2">
-            🎧 Dashboard Tim IT
+            👥 Dashboard Tim IT
         </h2>
     </x-slot>
 
@@ -154,8 +154,7 @@
 
                                     {{-- STATUS --}}
                                     <td class="p-2">
-                                        <span
-                                            class="px-3 py-1 rounded-full text-white text-xs font-semibold {{ $statusColor }}">
+                                        <span class="status-badge {{ $statusColor }}">
                                             {{ $ticket->status }}
                                         </span>
                                     </td>
@@ -323,6 +322,37 @@
             animation: fadeIn 0.2s ease-in-out;
         }
 
+        #ticketTable th:nth-child(8),
+        #ticketTable td:nth-child(8) {
+            min-width: 160px;
+            /* kamu bisa ubah jadi 180 atau 200 sesuai kebutuhan */
+            text-align: center;
+        }
+
+        /* Perbaiki tampilan badge status */
+        .status-badge {
+            display: inline-block;
+            min-width: 130px;
+            padding: 6px 10px;
+            line-height: 1.2rem;
+            white-space: normal;
+            word-break: break-word;
+            text-align: center;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Agar tabel tetap rapi di layar kecil */
+        @media (max-width: 768px) {
+
+            #ticketTable th:nth-child(8),
+            #ticketTable td:nth-child(8) {
+                min-width: 120px;
+            }
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -333,6 +363,40 @@
                 opacity: 1;
                 transform: scale(1);
             }
+        }
+
+        select {
+            appearance: none;
+            /* Hilangkan arrow default */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg fill='none' stroke='%236b7280' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.6rem center;
+            background-size: 1rem;
+            padding-right: 2rem;
+            /* beri ruang untuk ikon panah */
+        }
+
+        /* Tampilan select lebih rapi seperti button */
+        select.border-gray-300 {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            background-color: white;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #111827;
+            transition: all 0.2s;
+        }
+
+        select.border-gray-300:hover {
+            border-color: #3b82f6;
+        }
+
+        select:focus {
+            outline: none;
+            ring: 2px solid #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
         }
     </style>
 
