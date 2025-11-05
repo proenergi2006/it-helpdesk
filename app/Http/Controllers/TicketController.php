@@ -130,7 +130,8 @@ class TicketController extends Controller
             'in_progress',
             'resolved',
             'Hold - Third Party',
-            'Hold - Waiting User Response'
+            'Hold - Waiting User Response',
+            'Hold - Teknisi'
         ];
 
         if (!in_array($status, $allowedStatuses)) {

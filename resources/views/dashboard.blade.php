@@ -51,6 +51,7 @@
                     <option value="resolved">Selesai</option>
                     <option value="Hold - Third Party">Hold - Third Party</option>
                     <option value="Hold - Waiting User Response">Hold - Waiting User</option>
+                    <option value="Hold - Teknisi">Hold - Teknisi</option>
                 </select>
             </div>
 
@@ -110,6 +111,7 @@
                                         'resolved' => 'bg-green-600',
                                         'Hold - Third Party' => 'bg-purple-600',
                                         'Hold - Waiting User Response' => 'bg-orange-500',
+                                        'Hold - Teknisi' => 'bg-red-500',
                                         default => 'bg-gray-400',
                                     };
                                 @endphp
@@ -211,7 +213,7 @@
                                                     </button>
                                                 </div>
                                             </div>
-                                        @elseif (in_array($ticket->status, ['in_progress', 'Hold - Third Party', 'Hold - Waiting User Response']))
+                                        @elseif (in_array($ticket->status, ['in_progress', 'Hold - Third Party', 'Hold - Waiting User Response', 'Hold - Teknisi']))
                                             <div class="flex flex-col gap-2">
                                                 {{-- Tombol Selesai pakai SweetAlert --}}
                                                 <button type="button"
@@ -258,6 +260,19 @@
                                                             <button type="submit"
                                                                 class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
                                                                 💬 Hold - Waiting User
+                                                            </button>
+                                                        </form>
+
+                                                        <form
+                                                            action="{{ route('tickets.updateStatus', $ticket->id) }}"
+                                                            method="POST" class="block">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <input type="hidden" name="status"
+                                                                value="Hold - Teknisi">
+                                                            <button type="submit"
+                                                                class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
+                                                                🧰 Hold - Teknisi
                                                             </button>
                                                         </form>
                                                     </div>
