@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
 {
@@ -47,18 +48,35 @@ class TicketController extends Controller
      */
     public function store(Request $request)
     {
+        // 1️⃣ Validasi field utama dan attachment
         $validated = $request->validate([
-            'nama'        => 'required|string|max:100',
-            'email'       => 'required|email|max:150',
-            'cabang'      => 'required|string|max:50',
-            'title'       => 'required|string|max:255',
-            'category' => 'required|in:software,hardware,network&multimedia',
-
-            'klasifikasi' => 'required|in:Incident,Request',
-            'description' => 'required|string',
+            'nama'         => 'required|string|max:100',
+            'email'        => 'required|email|max:150',
+            'cabang'       => 'required|string|max:50',
+            'title'        => 'required|string|max:255',
+            'category'     => 'required|in:software,hardware,network&multimedia',
+            'klasifikasi'  => 'required|in:Incident,Request',
+            'description'  => 'required|string',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // 2MB per file
         ]);
 
-        Ticket::create($validated);
+        // 2️⃣ Simpan data tiket
+        $ticket = Ticket::create($validated);
+
+        // 3️⃣ Simpan attachment jika ada
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('attachments', 'public'); // simpan ke storage/app/public/attachments
+                DB::table('ticket_attachments')->insert([
+                    'ticket_id' => $ticket->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_size' => $file->getSize(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
     }

@@ -67,6 +67,35 @@
             background-color: #cbd5e1;
             border-radius: 4px;
         }
+
+        /* Lebarkan kolom STATUS di tabel antrian */
+        #ticketTable th:nth-child(7),
+        #ticketTable td:nth-child(7) {
+            min-width: 150px;
+            /* kamu bisa ubah jadi 180px kalau masih sempit */
+            text-align: center;
+            white-space: normal;
+            /* biar teks bisa turun ke bawah kalau panjang */
+            word-wrap: break-word;
+        }
+
+        /* Biar badge status tetap rapi di tengah */
+        #ticketTable td:nth-child(7) span {
+            display: inline-block;
+            min-width: 110px;
+            padding: 6px 10px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            color: #fff;
+        }
+
+        /* Tambahan: sedikit merapikan cell tabel biar tidak padat */
+        #ticketTable td,
+        #ticketTable th {
+            vertical-align: middle;
+        }
     </style>
 </head>
 
@@ -242,7 +271,8 @@
             </div>
 
             {{-- Form Ticket --}}
-            <form method="POST" action="{{ route('tickets.store') }}" class="space-y-6">
+            <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
+                class="space-y-6">
                 @csrf
 
                 {{-- GRID WRAPPER --}}
@@ -251,24 +281,21 @@
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Nama</label>
                         <input name="nama" type="text"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     {{-- Email --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Email</label>
                         <input name="email" type="email"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     {{-- Cabang --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Cabang</label>
                         <select name="cabang"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Pilih Cabang</option>
                             <option>Head Office</option>
                             <option>Jakarta</option>
@@ -285,8 +312,7 @@
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Kategori</label>
                         <select name="category"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Pilih Kategori</option>
                             <option value="software">Software</option>
                             <option value="hardware">Hardware</option>
@@ -298,7 +324,7 @@
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Klasifikasi</label>
                         <select name="klasifikasi"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
                             <option value="">Pilih Klasifikasi</option>
                             <option value="Incident">Incident (Gangguan / Error)</option>
                             <option value="Request">Request (Permintaan Fitur / Akses)</option>
@@ -309,16 +335,25 @@
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Judul Ticket</label>
                         <input name="title" type="text"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            required>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     {{-- Deskripsi (Full width) --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Deskripsi Masalah</label>
                         <textarea name="description" rows="4"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                            required></textarea>
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                    </div>
+
+                    {{-- Attachment (opsional, max 3 file, 2MB, jpg/png/pdf) --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">
+                            Lampiran (Opsional) <span class="text-gray-500 text-xs">(maks. 3 file, 2MB,
+                                PDF/JPG/PNG)</span>
+                        </label>
+                        <input type="file" name="attachments[]" id="attachments"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-1"
+                            accept=".jpg,.jpeg,.png,.pdf" multiple>
                     </div>
                 </div>
 
@@ -360,6 +395,93 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form[action="{{ route('tickets.store') }}"]');
+            const requiredFields = [{
+                    name: 'nama',
+                    label: 'Nama'
+                },
+                {
+                    name: 'email',
+                    label: 'Email'
+                },
+                {
+                    name: 'cabang',
+                    label: 'Cabang'
+                },
+                {
+                    name: 'category',
+                    label: 'Kategori'
+                },
+                {
+                    name: 'klasifikasi',
+                    label: 'Klasifikasi'
+                },
+                {
+                    name: 'title',
+                    label: 'Judul Ticket'
+                },
+            ];
+            const fileInput = document.getElementById('attachments');
+
+            form.addEventListener('submit', function(e) {
+                // === VALIDASI FIELD WAJIB ===
+                for (const field of requiredFields) {
+                    const input = form.querySelector(`[name="${field.name}"]`);
+                    if (!input || input.value.trim() === '') {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Form belum lengkap!',
+                            text: `Field "${field.label}" wajib diisi.`,
+                            confirmButtonColor: '#3b82f6'
+                        });
+                        input.focus();
+                        return false;
+                    }
+                }
+
+                // === VALIDASI FILE UPLOAD ===
+                const files = fileInput.files;
+                if (files.length > 3) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Terlalu banyak file!',
+                        text: 'Maksimal hanya boleh mengunggah 3 file.',
+                        confirmButtonColor: '#3b82f6'
+                    });
+                    return false;
+                }
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+                    if (!allowedTypes.includes(file.type)) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Format file tidak diizinkan!',
+                            text: `File ${file.name} bukan PDF/JPG/PNG.`,
+                            confirmButtonColor: '#ef4444'
+                        });
+                        return false;
+                    }
+
+                    if (file.size > 2 * 1024 * 1024) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ukuran file terlalu besar!',
+                            text: `File ${file.name} melebihi 2MB.`,
+                            confirmButtonColor: '#ef4444'
+                        });
+                        return false;
+                    }
+                }
+            });
+        });
         document.addEventListener("DOMContentLoaded", function() {
             const chatToggle = document.getElementById("chat-toggle");
             const chatBox = document.getElementById("chatbot");
@@ -399,9 +521,11 @@
                 const question = input.value.trim();
                 if (!question) return;
 
-                chatMessages.innerHTML += `<div class="text-right text-blue-600">🧑‍💻 ${question}</div>`;
+                chatMessages.innerHTML +=
+                    `<div class="text-right text-blue-600">🧑‍💻 ${question}</div>`;
                 input.value = '';
-                chatMessages.innerHTML += `<div id="loading" class="text-gray-400 italic">Mengetik...</div>`;
+                chatMessages.innerHTML +=
+                    `<div id="loading" class="text-gray-400 italic">Mengetik...</div>`;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
 
                 try {
@@ -428,7 +552,8 @@
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 } catch (e) {
                     document.getElementById("loading").remove();
-                    chatMessages.innerHTML += `<div class="text-red-500">❌ Terjadi kesalahan server.</div>`;
+                    chatMessages.innerHTML +=
+                        `<div class="text-red-500">❌ Terjadi kesalahan server.</div>`;
                 }
             }
 
