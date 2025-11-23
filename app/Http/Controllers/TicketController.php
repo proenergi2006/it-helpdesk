@@ -7,6 +7,10 @@ use App\Models\Ticket;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TicketCreatedUser;
+use App\Mail\TicketCreatedTeam;
+use App\Mail\TicketResolvedUser;
 
 class TicketController extends Controller
 {
@@ -57,6 +61,7 @@ class TicketController extends Controller
             'category'     => 'required|in:software,hardware,network&multimedia',
             'klasifikasi'  => 'required|in:Incident,Request',
             'description'  => 'required|string',
+
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048', // 2MB per file
         ]);
 
@@ -77,6 +82,11 @@ class TicketController extends Controller
                 ]);
             }
         }
+
+        Mail::to($ticket->email)->send(new TicketCreatedUser($ticket));
+
+        // Kirim email ke Team IT
+        Mail::to('it@proenergi.com')->send(new TicketCreatedTeam($ticket));
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
     }
@@ -178,6 +188,7 @@ class TicketController extends Controller
         if ($status === 'resolved') {
             $ticket->finished_at = now();
             $ticket->resolution_note = $request->resolution_note ?? '-';
+            Mail::to($ticket->email)->send(new TicketResolvedUser($ticket));
         }
 
         $ticket->status = $status;
