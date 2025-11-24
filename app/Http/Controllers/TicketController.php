@@ -85,8 +85,12 @@ class TicketController extends Controller
 
         Mail::to($ticket->email)->send(new TicketCreatedUser($ticket));
 
-        // Kirim email ke Team IT
-        Mail::to('it@proenergi.com')->send(new TicketCreatedTeam($ticket));
+        Mail::to([
+            'iwan.hermawan@proenergi.co.id',
+            'fadli.fathur@proenergi.co.id',
+            'gary.salsabilla@proenergi.co.id',
+            'sultony.saddam@proenergi.co.id'
+        ])->send(new TicketCreatedTeam($ticket));
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
     }
