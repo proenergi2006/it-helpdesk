@@ -55,7 +55,7 @@
             Silakan login ke dashboard Helpdesk IT untuk memproses ticket ini.
         </p>
 
-        <a href="https://syop.proenergi.com/helpdesk"
+        <a href="https://helpdesk.proenergi.com/login"
             style="display:inline-block; margin-top:10px; padding:10px 15px; background:#1d4ed8; color:#fff; text-decoration:none; border-radius:6px;">
             Buka Dashboard Helpdesk
         </a>
