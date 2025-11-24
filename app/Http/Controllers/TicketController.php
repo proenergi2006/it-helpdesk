@@ -59,6 +59,7 @@ class TicketController extends Controller
             'cabang'       => 'required|string|max:50',
             'title'        => 'required|string|max:255',
             'category'     => 'required|in:software,hardware,network&multimedia',
+            'priority'     => 'required|in:Low,Medium,Critical',
             'klasifikasi'  => 'required|in:Incident,Request',
             'description'  => 'required|string',
 
@@ -125,6 +126,7 @@ class TicketController extends Controller
                     'category'       => $t->category,
                     'status'         => $t->status,
                     'klasifikasi'    => $t->klasifikasi,
+                    'priority'       => $t->priority,
                     'created_at'     => $t->created_at,
                     'taken_by_name'  => $t->takenByUser->name ?? null,
                 ];

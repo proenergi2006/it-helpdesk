@@ -199,6 +199,7 @@
                             <th class="p-2 text-left">Cabang</th>
                             <th class="p-2 text-left">Kategori</th>
                             <th class="p-2 text-left">Klasifikasi</th>
+                            <th class="p-2 text-left">Priority</th>
                             <th class="p-2 text-left">Status</th>
                             <th class="p-2 text-left">Dikerjakan Oleh</th>
                             <th class="p-2 text-left">Waktu</th>
@@ -215,6 +216,17 @@
                                 <td class="p-2">{{ $ticket->cabang }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->category }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->klasifikasi ?? '-' }}</td>
+                                <td class="p-2">
+                                    <span
+                                        class="px-3 py-1 rounded-full text-white text-xs font-semibold
+        {{ $ticket->priority === 'Low'
+            ? 'bg-green-600'
+            : ($ticket->priority === 'Medium'
+                ? 'bg-yellow-500'
+                : 'bg-red-600') }}">
+                                        {{ $ticket->priority }}
+                                    </span>
+                                </td>
                                 <td class="p-2">
                                     <span
                                         class="px-3 py-1 rounded-full text-white text-xs font-semibold
@@ -331,6 +343,18 @@
                         </select>
                     </div>
 
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">Priority</label>
+                        <select name="priority"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                            <option value="">Pilih Priority</option>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+
+
                     {{-- Judul Ticket (Full width) --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Judul Ticket</label>
@@ -416,6 +440,10 @@
                 {
                     name: 'klasifikasi',
                     label: 'Klasifikasi'
+                },
+                {
+                    name: 'priority',
+                    label: 'Priority'
                 },
                 {
                     name: 'title',
@@ -628,6 +656,16 @@
                     <td class="p-2">${t.cabang}</td>
                     <td class="p-2 capitalize">${t.category}</td>
                     <td class="p-2 capitalize">${t.klasifikasi ?? '-'}</td>
+                 <td class="p-2">
+    <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
+        t.priority === 'Low' ? 'bg-green-600' :
+        t.priority === 'Medium' ? 'bg-yellow-500' :
+        t.priority === 'Critical' ? 'bg-red-600' :
+        'bg-gray-400'
+    }">
+        ${t.priority ?? '-'}
+    </span>
+</td>
                     <td class="p-2">
                         <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
                             t.status==='open'?'bg-yellow-500':t.status==='in_progress'?'bg-blue-500':t.status==='resolved'?'bg-green-600':'bg-gray-400'
