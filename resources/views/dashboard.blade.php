@@ -107,6 +107,7 @@
 
                                     $statusColor = match ($ticket->status) {
                                         'open' => 'bg-yellow-500',
+                                        'cancel' => 'bg-red-500',
                                         'in_progress' => 'bg-blue-500',
                                         'resolved' => 'bg-green-600',
                                         'Hold - Third Party' => 'bg-purple-600',
@@ -208,7 +209,7 @@
                                                     {{-- Tombol Hapus --}}
                                                     <button type="button" data-id="{{ $ticket->id }}"
                                                         class="btn-delete block w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-b-md">
-                                                        🗑️ Hapus
+                                                        🗑️ Cancel
                                                     </button>
                                                 </div>
                                             </div>
@@ -548,13 +549,13 @@
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
                     const result = await Swal.fire({
-                        title: 'Hapus Tiket?',
-                        text: 'Apakah Anda yakin ingin menghapus tiket ini? Aksi ini tidak bisa dibatalkan.',
+                        title: 'Cancel Tiket?',
+                        text: 'Apakah Anda yakin ingin cancel tiket ini? Aksi ini tidak bisa dibatalkan.',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonColor: '#dc2626',
                         cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Ya, Hapus',
+                        confirmButtonText: 'Ya, Cancel',
                         cancelButtonText: 'Batal'
                     });
 

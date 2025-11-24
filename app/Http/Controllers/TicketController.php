@@ -238,24 +238,48 @@ class TicketController extends Controller
         ]);
     }
 
+    // public function destroy($id)
+    // {
+    //     $ticket = Ticket::findOrFail($id);
+
+    //     if ($ticket->status !== 'open') {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Tiket hanya bisa dihapus jika status masih OPEN.'
+    //         ], 400);
+    //     }
+
+    //     $ticket->delete();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Tiket berhasil dihapus!'
+    //     ]);
+    // }
+
     public function destroy($id)
     {
         $ticket = Ticket::findOrFail($id);
 
+        // Hanya boleh cancel jika status OPEN
         if ($ticket->status !== 'open') {
             return response()->json([
                 'success' => false,
-                'message' => 'Tiket hanya bisa dihapus jika status masih OPEN.'
+                'message' => 'Tiket hanya bisa dibatalkan jika status masih OPEN.'
             ], 400);
         }
 
-        $ticket->delete();
+        // Ubah status menjadi cancel
+        $ticket->status = 'cancel';
+        $ticket->finished_at = now(); // optional
+        $ticket->save();
 
         return response()->json([
             'success' => true,
-            'message' => 'Tiket berhasil dihapus!'
+            'message' => 'Tiket berhasil dibatalkan!'
         ]);
     }
+
 
 
     public function chatAsk(Request $request)
