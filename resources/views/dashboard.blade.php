@@ -180,113 +180,121 @@
                                     <td class="p-2">
                                         <div class="flex flex-col gap-2">
                                             @if ($ticket->status !== 'resolved' && $ticket->status !== 'cancel')
-                                                <button
+                                                <button type="button"
                                                     class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full transfer-btn"
                                                     data-id="{{ $ticket->id }}">
                                                     🔄 Transfer
                                                 </button>
                                             @else
+                                                <span class="text-gray-400 text-xs italic">-</span>
+                                            @endif
                                         </div>
-                                        <span class="text-gray-400 text-xs italic">-</span>
-                            @endif
-                            @if ($ticket->status === 'open')
-                                {{-- Tombol Ambil --}}
-                                <div x-data="{ open: false }" class="relative inline-block text-left">
-                                    <button @click="open = !open"
-                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
-                                        ⚙️ Aksi
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="2" stroke="currentColor" class="w-3 h-3 ml-1">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
 
-                                    <div x-show="open" @click.away="open = false"
-                                        class="absolute z-20 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg text-xs">
-                                        {{-- Tombol Ambil --}}
-                                        <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
-                                            method="POST">
-                                            @csrf
-                                            @method('PATCH')
-                                            <input type="hidden" name="status" value="in_progress">
-                                            <button type="submit"
-                                                class="block w-full text-left px-3 py-2 hover:bg-blue-50 text-blue-600 rounded-t-md">
-                                                🚀 Ambil
-                                            </button>
-                                        </form>
-
-                                        {{-- Tombol Hapus --}}
-                                        <button type="button" data-id="{{ $ticket->id }}"
-                                            class="btn-delete block w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-b-md">
-                                            🗑️ Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            @elseif (in_array($ticket->status, ['in_progress', 'Hold - Third Party', 'Hold - Waiting User Response', 'Hold - Teknisi']))
-                                <div class="flex flex-col gap-2">
-                                    {{-- Tombol Selesai pakai SweetAlert --}}
-                                    <button type="button"
-                                        class="btn-finish bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full"
-                                        data-id="{{ $ticket->id }}">
-                                        ✅ Selesai
-                                    </button>
-
-                                    {{-- Dropdown Hold --}}
-                                    <div x-data="{ open: false }" class="relative">
-                                        <button type="button" @click="open = !open"
-                                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
-                                            ⏸️ Tahan Tiket
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                                class="w-3 h-3 ml-1">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M19 9l-7 7-7-7" />
-                                            </svg>
-                                        </button>
-
-                                        <div x-show="open" @click.away="open = false"
-                                            class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
-                                            <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
-                                                method="POST" class="block">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="Hold - Third Party">
-                                                <button type="submit"
-                                                    class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-t-md">
-                                                    🧑‍💻 Hold - Third Party
+                                        @if ($ticket->status === 'open')
+                                            {{-- Tombol Ambil --}}
+                                            <div x-data="{ open: false }" class="relative inline-block text-left">
+                                                <button @click="open = !open"
+                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
+                                                    ⚙️ Aksi
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                        class="w-3 h-3 ml-1">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M19 9l-7 7-7-7" />
+                                                    </svg>
                                                 </button>
-                                            </form>
 
-                                            <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
-                                                method="POST" class="block">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status"
-                                                    value="Hold - Waiting User Response">
-                                                <button type="submit"
-                                                    class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
-                                                    💬 Hold - Waiting User
-                                                </button>
-                                            </form>
+                                                <div x-show="open" @click.away="open = false"
+                                                    class="absolute z-20 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg text-xs">
+                                                    {{-- Tombol Ambil --}}
+                                                    <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
+                                                        method="POST">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <input type="hidden" name="status" value="in_progress">
+                                                        <button type="submit"
+                                                            class="block w-full text-left px-3 py-2 hover:bg-blue-50 text-blue-600 rounded-t-md">
+                                                            🚀 Ambil
+                                                        </button>
+                                                    </form>
 
-                                            <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
-                                                method="POST" class="block">
-                                                @csrf
-                                                @method('PATCH')
-                                                <input type="hidden" name="status" value="Hold - Teknisi">
-                                                <button type="submit"
-                                                    class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
-                                                    🧰 Hold - Teknisi
+                                                    {{-- Tombol Hapus --}}
+                                                    <button type="button" data-id="{{ $ticket->id }}"
+                                                        class="btn-delete block w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 rounded-b-md">
+                                                        🗑️ Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @elseif (in_array($ticket->status, ['in_progress', 'Hold - Third Party', 'Hold - Waiting User Response', 'Hold - Teknisi']))
+                                            <div class="flex flex-col gap-2">
+                                                {{-- Tombol Selesai pakai SweetAlert --}}
+                                                <button type="button"
+                                                    class="btn-finish bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full"
+                                                    data-id="{{ $ticket->id }}">
+                                                    ✅ Selesai
                                                 </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            @else
-                                <span class="text-gray-400 text-xs italic">✅ Done</span>
-                            @endif
-                            </td>
-                            </tr>
+
+                                                {{-- Dropdown Hold --}}
+                                                <div x-data="{ open: false }" class="relative">
+                                                    <button type="button" @click="open = !open"
+                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
+                                                        ⏸️ Tahan Tiket
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                            viewBox="0 0 24 24" stroke-width="2"
+                                                            stroke="currentColor" class="w-3 h-3 ml-1">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M19 9l-7 7-7-7" />
+                                                        </svg>
+                                                    </button>
+
+                                                    <div x-show="open" @click.away="open = false"
+                                                        class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                                                        <form
+                                                            action="{{ route('tickets.updateStatus', $ticket->id) }}"
+                                                            method="POST" class="block">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <input type="hidden" name="status"
+                                                                value="Hold - Third Party">
+                                                            <button type="submit"
+                                                                class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-t-md">
+                                                                🧑‍💻 Hold - Third Party
+                                                            </button>
+                                                        </form>
+
+                                                        <form
+                                                            action="{{ route('tickets.updateStatus', $ticket->id) }}"
+                                                            method="POST" class="block">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <input type="hidden" name="status"
+                                                                value="Hold - Waiting User Response">
+                                                            <button type="submit"
+                                                                class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
+                                                                💬 Hold - Waiting User
+                                                            </button>
+                                                        </form>
+
+                                                        <form
+                                                            action="{{ route('tickets.updateStatus', $ticket->id) }}"
+                                                            method="POST" class="block">
+                                                            @csrf
+                                                            @method('PATCH')
+                                                            <input type="hidden" name="status"
+                                                                value="Hold - Teknisi">
+                                                            <button type="submit"
+                                                                class="block w-full text-left px-3 py-2 text-xs hover:bg-yellow-100 rounded-b-md">
+                                                                🧰 Hold - Teknisi
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400 text-xs italic">✅ Done</span>
+                                        @endif
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
