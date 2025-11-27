@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
         ->name('tickets.updatePriority');
     Route::delete('/tickets/{id}', [TicketController::class, 'destroy'])->name('tickets.destroy');
     Route::get('/tickets/{id}/detail', [TicketController::class, 'detail']);
+    Route::put('/tickets/{id}/transfer', [TicketController::class, 'transfer'])
+        ->name('tickets.transfer');
 });
 
 require __DIR__ . '/auth.php';

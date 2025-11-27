@@ -156,12 +156,16 @@ class TicketController extends Controller
 
         $cabangs = Ticket::select('cabang')->distinct()->pluck('cabang');
 
+        // ⬇️ Tambahkan ini (ambil semua teknisi IT)
+        $technicians = \App\Models\User::whereIn('role', ['it', 'admin_it', 'support'])->get();
+
         return view('dashboard', [
             'tickets'          => $tickets,
             'cabangs'          => $cabangs,
             'openCount'        => Ticket::where('status', 'open')->count(),
             'inProgressCount'  => Ticket::where('status', 'in_progress')->count(),
             'resolvedCount'    => Ticket::where('status', 'resolved')->count(),
+            'technicians'      => $technicians // ⬅️ WAJIB ADA
         ]);
     }
 
@@ -279,6 +283,35 @@ class TicketController extends Controller
             'message' => 'Tiket berhasil dibatalkan!'
         ]);
     }
+
+    public function transfer(Request $request, $id)
+    {
+        $request->validate([
+            'new_technician_id' => 'required|exists:users,id'
+        ]);
+
+        $ticket = Ticket::findOrFail($id);
+        $oldTechnician = $ticket->taken_by;
+        $newTechnician = $request->new_technician_id;
+
+        // Jika tiket belum pernah diambil, langsung set teknisi baru
+        if ($ticket->status === 'open') {
+            $ticket->status = 'in_progress';
+            $ticket->started_at = now();
+        }
+
+        // Update teknisi
+        $ticket->taken_by = $newTechnician;
+        $ticket->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ticket berhasil dialihkan!',
+            'old_technician' => $oldTechnician,
+            'new_technician' => $newTechnician
+        ]);
+    }
+
 
 
 
