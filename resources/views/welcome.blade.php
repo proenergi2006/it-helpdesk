@@ -303,6 +303,17 @@
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">
+                            CC Email (Opsional)
+                            <span class="text-xs text-gray-500">(pisahkan dengan koma)</span>
+                        </label>
+
+                        <input name="cc_emails" type="text"
+                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="contoh: orang1@proenergi.co.id, orang2@proenergi.co.id">
+                    </div>
+
                     {{-- Cabang --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Cabang</label>

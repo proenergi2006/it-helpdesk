@@ -12,6 +12,7 @@ class Ticket extends Model
     protected $fillable = [
         'nama',
         'email',
+        'cc_emails',
         'cabang',
         'title',
         'category',

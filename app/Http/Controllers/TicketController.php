@@ -56,6 +56,7 @@ class TicketController extends Controller
         $validated = $request->validate([
             'nama'         => 'required|string|max:100',
             'email'        => 'required|email|max:150',
+            'cc_emails'    => 'nullable|string',
             'cabang'       => 'required|string|max:50',
             'title'        => 'required|string|max:255',
             'category'     => 'required|in:software,hardware,network&multimedia',
@@ -84,7 +85,20 @@ class TicketController extends Controller
             }
         }
 
-        Mail::to($ticket->email)->send(new TicketCreatedUser($ticket));
+        // 4️⃣ Proses CC Email (jika ada)
+        $ccList = [];
+        if (!empty($request->cc_emails)) {
+            $ccList = array_filter(array_map('trim', explode(',', $request->cc_emails)));
+            // filter valid email
+            $ccList = array_filter($ccList, function ($email) {
+                return filter_var($email, FILTER_VALIDATE_EMAIL);
+            });
+        }
+
+        // 5️⃣ Kirim email ke Requester + CC
+        Mail::to($ticket->email)
+            ->cc($ccList)
+            ->send(new TicketCreatedUser($ticket));
 
         Mail::to([
             'iwan.hermawan@proenergi.co.id',
@@ -198,7 +212,17 @@ class TicketController extends Controller
         if ($status === 'resolved') {
             $ticket->finished_at = now();
             $ticket->resolution_note = $request->resolution_note ?? '-';
-            Mail::to($ticket->email)->send(new TicketResolvedUser($ticket));
+
+            $ccList = [];
+            if (!empty($ticket->cc_emails)) {
+                $ccList = array_filter(array_map('trim', explode(',', $ticket->cc_emails)));
+                $ccList = array_filter($ccList, function ($email) {
+                    return filter_var($email, FILTER_VALIDATE_EMAIL);
+                });
+            }
+            Mail::to($ticket->email)
+                ->cc($ccList)
+                ->send(new TicketResolvedUser($ticket));
         }
 
         $ticket->status = $status;
