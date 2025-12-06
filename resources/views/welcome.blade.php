@@ -132,9 +132,17 @@
                 <div id="panelSoftware" class="grid grid-cols-1 gap-3">
                     @forelse ($softwareTickets as $ticket)
                         <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
+
+                            @php
+                                $cat = strtoupper(substr($ticket->category, 0, 1)); // S / H
+                                $klas = strtoupper(substr($ticket->klasifikasi, 0, 1)); // I / R
+                                $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                            @endphp
+
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">
-                                #S{{ str_pad($ticket->id, 3, '0', STR_PAD_LEFT) }}
+                                #{{ $code }}
                             </div>
+
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
                             <div class="text-sm mt-1">Status: <span
@@ -152,9 +160,16 @@
                 <div id="panelHardware" class="grid grid-cols-1 gap-3">
                     @forelse ($hardwareTickets as $ticket)
                         <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
+                            @php
+                                $cat = strtoupper(substr($ticket->category, 0, 1)); // H
+                                $klas = strtoupper(substr($ticket->klasifikasi, 0, 1)); // I / R
+                                $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                            @endphp
+
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">
-                                #H{{ str_pad($ticket->id, 3, '0', STR_PAD_LEFT) }}
+                                #{{ $code }}
                             </div>
+
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
                             <div class="text-sm mt-1">Status: <span
@@ -645,7 +660,10 @@
 
             sPanel.innerHTML = software.map(t => `
                 <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
-                    <div class="text-3xl font-extrabold mb-1">#S${String(t.id).padStart(3,'0')}</div>
+                 <div class="text-3xl font-extrabold mb-1">
+    #${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
+</div>
+
                     <div class="text-base font-semibold truncate">${t.title}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
                     <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
@@ -653,7 +671,8 @@
 
             hPanel.innerHTML = hardware.map(t => `
                 <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
-                    <div class="text-3xl font-extrabold mb-1">#H${String(t.id).padStart(3,'0')}</div>
+                    <div class="text-3xl font-extrabold mb-1">#${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
+</div>
                     <div class="text-base font-semibold truncate">${t.title}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
                     <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
@@ -661,7 +680,8 @@
 
             tbody.innerHTML = data.map(t => `
                 <tr class="border-b hover:bg-blue-50 transition">
-                    <td class="p-2 font-semibold text-blue-700">${t.category[0].toUpperCase()}${String(t.id).padStart(3,'0')}</td>
+                    <td class="p-2 font-semibold text-blue-700">${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
+</td>
                     <td class="p-2">${t.nama ?? '-'}</td>
                     <td class="p-2">${t.title}</td>
                     <td class="p-2">${t.cabang}</td>
