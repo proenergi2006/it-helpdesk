@@ -554,64 +554,70 @@
                     }
                 });
 
-                // === HAPUS TIKET ===
                 $(document).on('click', '.btn-delete', async function() {
                     const id = $(this).data('id');
                     const row = $(this).closest('tr');
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
-                    const result = await Swal.fire({
-                        title: 'Cancel Tiket?',
-                        text: 'Apakah Anda yakin ingin cancel tiket ini? Aksi ini tidak bisa dibatalkan.',
-                        icon: 'warning',
+                    const {
+                        value: cancelNote
+                    } = await Swal.fire({
+                        title: "Batalkan Tiket?",
+                        input: "textarea",
+                        inputPlaceholder: "Tuliskan alasan pembatalan...",
                         showCancelButton: true,
-                        confirmButtonColor: '#dc2626',
-                        cancelButtonColor: '#6b7280',
-                        confirmButtonText: 'Ya, Cancel',
-                        cancelButtonText: 'Batal'
+                        confirmButtonColor: "#dc2626",
+                        cancelButtonColor: "#6b7280",
+                        confirmButtonText: "Ya, Batalkan",
+                        cancelButtonText: "Batal",
+                        inputValidator: value => {
+                            if (!value) return "Catatan wajib diisi!";
+                        }
                     });
 
-                    if (!result.isConfirmed) return;
+                    if (!cancelNote) return;
 
                     try {
                         const res = await fetch(`/tickets/${id}`, {
-                            method: 'DELETE',
+                            method: "DELETE",
                             headers: {
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Accept': 'application/json'
-                            }
+                                "X-CSRF-TOKEN": csrfToken,
+                                "Accept": "application/json",
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                cancel_note: cancelNote
+                            })
                         });
 
                         const data = await res.json();
 
                         if (data.success) {
                             Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
+                                icon: "success",
+                                title: "Dibatalkan!",
                                 text: data.message,
                                 timer: 1500,
-                                showConfirmButton: false
+                                showConfirmButton: false,
                             });
 
-                            // Hapus baris dari DataTable
-                            const table = $('#ticketTable').DataTable();
-                            table.row(row).remove().draw(false);
+                            $('#ticketTable').DataTable().row(row).remove().draw(false);
                         } else {
                             Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal Menghapus',
+                                icon: "error",
+                                title: "Gagal",
                                 text: data.message
                             });
                         }
                     } catch (error) {
-                        console.error(error);
                         Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Terjadi kesalahan server atau koneksi.'
+                            icon: "error",
+                            title: "Error",
+                            text: "Terjadi kesalahan server."
                         });
                     }
                 });
+
 
 
                 // === SWEETALERT RESOLVED NOTE ===

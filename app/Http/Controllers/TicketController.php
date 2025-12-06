@@ -285,11 +285,10 @@ class TicketController extends Controller
     //     ]);
     // }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
 
-        // Hanya boleh cancel jika status OPEN
         if ($ticket->status !== 'open') {
             return response()->json([
                 'success' => false,
@@ -297,16 +296,40 @@ class TicketController extends Controller
             ], 400);
         }
 
-        // Ubah status menjadi cancel
+        // Ambil catatan pembatalan
+        $cancelNote = $request->cancel_note ?? null;
+
+        if (!$cancelNote) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Catatan pembatalan wajib diisi.'
+            ], 400);
+        }
+
+        // Simpan pembatalan
         $ticket->status = 'cancel';
-        $ticket->finished_at = now(); // optional
+        $ticket->cancel_note = $cancelNote;
+        $ticket->finished_at = now();
         $ticket->save();
+
+        // Siapkan email CC
+        $ccList = [];
+        if (!empty($ticket->cc_emails)) {
+            $ccList = array_filter(array_map('trim', explode(',', $ticket->cc_emails)));
+            $ccList = array_filter($ccList, fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL));
+        }
+
+        // Kirim email ke requester
+        Mail::to($ticket->email)
+            ->cc($ccList)
+            ->send(new \App\Mail\TicketCancelledUser($ticket));
 
         return response()->json([
             'success' => true,
-            'message' => 'Tiket berhasil dibatalkan!'
+            'message' => 'Tiket berhasil dibatalkan dan notifikasi dikirim!'
         ]);
     }
+
 
     public function transfer(Request $request, $id)
     {
