@@ -44,5 +44,21 @@ public function updates()
 {
     return $this->hasMany(\App\Models\ProjectUpdate::class)->latest();
 }
+
+public function activities()
+{
+    return $this->hasMany(\App\Models\ProjectActivity::class)->latest();
+}
+
+public function logActivity(string $event, string $title, array $meta = []): void
+{
+    $this->activities()->create([
+        'user_id' => auth()->id(),
+        'event'   => $event,
+        'title'   => $title,
+        'meta'    => $meta ?: null,
+    ]);
+}
+
     
 }

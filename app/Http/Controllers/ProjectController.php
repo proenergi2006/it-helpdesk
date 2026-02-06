@@ -23,6 +23,9 @@ class ProjectController extends Controller
         if ($request->filled('assigned_to')) {
             $q->where('assigned_to', $request->assigned_to);
         }
+        if (request('mine') === '1') {
+            $q->whereHas('assignees', fn($qq) => $qq->where('users.id', auth()->id()));
+        }
 
         $projects = $q->paginate(10)->withQueryString();
         $users = User::orderBy('name')->get(['id','name','email']);
@@ -93,6 +96,11 @@ class ProjectController extends Controller
             'assignees'   => ['nullable','array'],
             'assignees.*' => ['integer','exists:users,id'],
         ]);
+
+        $beforeStatus = $project->getOriginal('status');
+        $beforeStart  = $project->getOriginal('start_date');
+        $beforeDue    = $project->getOriginal('due_date');
+        $beforeDone   = $project->getOriginal('done_date');
         
         $project->update([
             'name'        => $validated['name'],
@@ -103,6 +111,42 @@ class ProjectController extends Controller
             'done_date'   => $validated['done_date'] ?? null,
             'updated_by'  => auth()->id(),
         ]);
+
+       // assignees sync
+        $beforeAssignees = $project->assignees()->pluck('users.id')->all();
+        $project->assignees()->sync($validated['assignees'] ?? []);
+        $afterAssignees  = $project->assignees()->pluck('users.id')->all();
+
+        // 1) status
+        if ($beforeStatus !== $project->status) {
+            $project->logActivity(
+                'status_changed',
+                'Mengubah status',
+                ['from' => $beforeStatus, 'to' => $project->status]
+            );
+        }
+
+        // 2) dates
+            if ($beforeStart !== $project->start_date || $beforeDue !== $project->due_date || $beforeDone !== $project->done_date) {
+                $project->logActivity(
+                    'dates_changed',
+                    'Mengubah timeline',
+                    [
+                        'from' => ['start'=>$beforeStart,'due'=>$beforeDue,'done'=>$beforeDone],
+                        'to'   => ['start'=>$project->start_date,'due'=>$project->due_date,'done'=>$project->done_date],
+                    ]
+                );
+            }
+
+            // 3) assignees
+            sort($beforeAssignees); sort($afterAssignees);
+            if ($beforeAssignees !== $afterAssignees) {
+                $project->logActivity(
+                    'assignees_changed',
+                    'Mengubah assignee',
+                    ['from' => $beforeAssignees, 'to' => $afterAssignees]
+                );
+            }
         
         $project->assignees()->sync($validated['assignees'] ?? []);
         
@@ -119,7 +163,7 @@ class ProjectController extends Controller
 
     public function show(Project $project)
 {
-    $project->load(['assignees', 'updates.user']);
+    $project->load(['assignees', 'updates.user','activities.user']);
     return view('projects.show', compact('project'));
 }
 

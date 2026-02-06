@@ -2,7 +2,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Projects</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">📝 Projects</h2>
 
             <a href="{{ route('projects.create') }}"
                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500">
@@ -43,6 +43,9 @@
                             <option value="{{ $u->id }}" @selected((string)request('assigned_to')===(string)$u->id)>{{ $u->name }}</option>
                         @endforeach
                     </select>
+
+                   
+                     
 
                     <div class="md:col-span-4 flex gap-2">
                         <button class="rounded-lg bg-gray-900 text-white px-4 py-2 hover:bg-gray-800">
@@ -90,6 +93,9 @@
                                     'review' => 'bg-purple-50 text-purple-700',
                                     default => 'bg-green-50 text-green-700',
                                 };
+
+                                $isOverdue = $p->due_date && !$p->done_date && now()->toDateString() > $p->due_date->toDateString();
+                                $nearDue = $p->due_date && !$p->done_date && now()->diffInDays($p->due_date, false) <= 3 && now()->diffInDays($p->due_date, false) >= 0;
 
                               
                                 $progress = match($p->status){
@@ -160,6 +166,12 @@
 
                                 <td class="px-4 py-3">
                                     {{ $p->due_date?->format('d M Y') ?? '-' }}
+
+                                    @if($isOverdue)
+                                    <span class="ml-2 text-xs px-2 py-1 rounded bg-red-50 text-red-700">Overdue</span>
+                                @elseif($nearDue)
+                                    <span class="ml-2 text-xs px-2 py-1 rounded bg-amber-50 text-amber-700">H-3</span>
+                                @endif
                                 </td>
 
                                 <td class="px-4 py-3">

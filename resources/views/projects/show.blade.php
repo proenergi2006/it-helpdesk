@@ -143,6 +143,40 @@
                 </div>
             </div>
 
+            <div class="bg-white rounded-xl shadow p-6">
+                <div class="font-semibold text-gray-800 mb-4">Activity Log</div>
+            
+                <div class="space-y-3">
+                    @forelse($project->activities as $a)
+                        <div class="border rounded-lg p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-sm font-medium text-gray-800">
+                                        {{ $a->user?->name ?? 'System' }} · {{ $a->title }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-0.5">
+                                        {{ $a->created_at->format('d M Y H:i') }}
+                                    </div>
+                                </div>
+            
+                                <div class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">
+                                    {{ $a->event }}
+                                </div>
+                            </div>
+            
+                            @if($a->meta)
+                                <div class="text-sm text-gray-700 mt-3">
+                                    <pre class="text-xs bg-gray-50 border rounded p-3 overflow-x-auto">{{ json_encode($a->meta, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES) }}</pre>
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="text-gray-500">Belum ada activity.</div>
+                    @endforelse
+                </div>
+            </div>
+            
+
         </div>
     </div>
 

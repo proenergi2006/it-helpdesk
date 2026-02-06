@@ -9,6 +9,8 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrixAttachmentController;
 use App\Http\Controllers\ProjectUpdateController;
+use App\Http\Controllers\MeetingController;
+
 
 // HALAMAN UTAMA diarahkan ke TicketController@index
 Route::get('/', [TicketController::class, 'index'])->name('welcome');
@@ -57,6 +59,12 @@ Route::middleware('auth')->group(function () {
      // trix upload (image/pdf/excel)
      Route::post('/trix/upload', [TrixAttachmentController::class, 'store'])->name('trix.upload');
      Route::resource('projects', ProjectController::class);
+
+     Route::resource('meetings', MeetingController::class);
+
+
+     Route::get('meetings/{meeting}/export-pdf', [MeetingController::class, 'exportPdf'])
+    ->name('meetings.export.pdf');
 
 
 });
