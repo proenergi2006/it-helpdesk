@@ -32,6 +32,7 @@ class ProjectController extends Controller
 
     public function create()
     {
+        $this->ensureProjectAdmin();
         $users = User::orderBy('name')->get(['id','name','email']);
         $statuses = self::STATUSES;
 
@@ -40,6 +41,7 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
+        $this->ensureProjectAdmin();
         $validated = $request->validate([
             'name'        => ['required','string','max:200'],
             'description' => ['nullable','string'], // HTML dari editor
@@ -110,6 +112,7 @@ class ProjectController extends Controller
 
     public function destroy(Project $project)
     {
+        $this->ensureProjectAdmin();
         $project->delete();
         return redirect()->route('projects.index')->with('success', 'Project berhasil dihapus.');
     }
@@ -118,6 +121,16 @@ class ProjectController extends Controller
 {
     $project->load(['assignees', 'updates.user']);
     return view('projects.show', compact('project'));
+}
+
+private function ensureProjectAdmin(): void
+{
+    $allowed = [
+        'iwan.hermawan@proenergi.co.id',
+        'reno@proenergi.co.id',
+    ];
+
+    abort_unless(in_array(auth()->user()->email, $allowed, true), 403);
 }
 
 }
