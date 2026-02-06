@@ -8,6 +8,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrixAttachmentController;
+use App\Http\Controllers\ProjectUpdateController;
 
 // HALAMAN UTAMA diarahkan ke TicketController@index
 Route::get('/', [TicketController::class, 'index'])->name('welcome');
@@ -48,6 +49,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('projects', ProjectController::class)->except(['show']);
     Route::middleware('auth')->post('/trix/upload', [TrixAttachmentController::class, 'store'])
     ->name('trix.upload');
+
+     // progress / comment updates
+     Route::post('projects/{project}/updates', [ProjectUpdateController::class, 'store'])->name('projects.updates.store');
+     Route::delete('projects/{project}/updates/{update}', [ProjectUpdateController::class, 'destroy'])->name('projects.updates.destroy');
+ 
+     // trix upload (image/pdf/excel)
+     Route::post('/trix/upload', [TrixAttachmentController::class, 'store'])->name('trix.upload');
+     Route::resource('projects', ProjectController::class);
+
 
 });
 

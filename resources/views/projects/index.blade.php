@@ -64,6 +64,7 @@
                             <th class="text-left px-4 py-3">Project</th>
                             <th class="text-left px-4 py-3">Assignee</th>
                             <th class="text-left px-4 py-3">Status</th>
+                            <th class="text-left px-4 py-3">Progress</th>
                             <th class="text-left px-4 py-3">Start</th>
                             <th class="text-left px-4 py-3">Due</th>
                             <th class="text-left px-4 py-3">Done</th>
@@ -88,6 +89,25 @@
                                     'in_progress' => 'bg-amber-50 text-amber-700',
                                     'review' => 'bg-purple-50 text-purple-700',
                                     default => 'bg-green-50 text-green-700',
+                                };
+
+                              
+                                $progress = match($p->status){
+                                    'backlog' => 0,
+                                    'todo' => 35,
+                                    'in_progress' => 50,
+                                    'review' => 100,
+                                    'done' => 100,
+                                    default => 0,
+                                };
+
+                                $progressColor = match($p->status){
+                                    'backlog' => 'bg-gray-400',
+                                    'todo' => 'bg-blue-600',
+                                    'in_progress' => 'bg-amber-500',
+                                    'review' => 'bg-purple-600',
+                                    'done' => 'bg-green-600',
+                                    default => 'bg-gray-400',
                                 };
                             @endphp
 
@@ -119,6 +139,22 @@
                                 </td>
 
                                 <td class="px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-40 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                            <div
+                                                class="h-2 rounded-full {{ $progressColor }}"
+                                                style="width: {{ $progress }}%">
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-600 w-10 text-right">
+                                            {{ $progress }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                
+
+                                <td class="px-4 py-3">
                                     {{ $p->start_date?->format('d M Y') ?? '-' }}
                                 </td>
 
@@ -132,6 +168,11 @@
 
                                 <td class="px-4 py-3">
                                     <div class="flex flex-wrap gap-2">
+                                        <a href="{{ route('projects.show', $p) }}"
+   class="px-3 py-1 rounded bg-gray-800 text-white hover:bg-gray-700">
+    Detail
+</a>
+
                                         <a href="{{ route('projects.edit', $p) }}"
                                            class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-500">
                                             Edit

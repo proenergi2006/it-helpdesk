@@ -113,4 +113,11 @@ class ProjectController extends Controller
         $project->delete();
         return redirect()->route('projects.index')->with('success', 'Project berhasil dihapus.');
     }
+
+    public function show(Project $project)
+{
+    $project->load(['assignees', 'updates.user']);
+    return view('projects.show', compact('project'));
+}
+
 }

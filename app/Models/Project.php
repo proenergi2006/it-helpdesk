@@ -39,5 +39,10 @@ class Project extends Model
 {
     return $this->belongsToMany(User::class)->withTimestamps();
 }
+
+public function updates()
+{
+    return $this->hasMany(\App\Models\ProjectUpdate::class)->latest();
+}
     
 }
