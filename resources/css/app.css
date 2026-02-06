@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "trix/dist/trix.css";
+
+/* Tom Select */
+.ts-control {
+  border-radius: 0.5rem;
+  border-color: rgb(209 213 219);
+  padding: 0.5rem 0.75rem;
+}
+.ts-wrapper.multi .ts-control > div {
+  border-radius: 0.5rem;
+}
+.ts-dropdown {
+  border-radius: 0.5rem;
+}
+
+trix-toolbar .trix-button-group--file-tools {
+    display: inline-flex !important;
+  }
+  trix-toolbar .trix-button--icon-attach {
+    display: inline-flex !important;
+  }
+  

@@ -89,6 +89,16 @@
                                 <span>{{ __('Dokumentasi') }}</span>
                             </span>
                         </x-nav-link>
+                        <x-nav-link :href="route('projects.index')" :active="request()->routeIs('projects.*')"
+                            class="!border-0 !text-slate-300 hover:!text-white">
+                            <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 ring-1 ring-transparent hover:ring-cyan-400/30 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-300/90" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25A2.25 2.25 0 009.75 18.75h4.5A2.25 2.25 0 0016.5 16.5v-2.25M7.5 9.75V7.5A2.25 2.25 0 019.75 5.25h4.5A2.25 2.25 0 0116.5 7.5v2.25M9 12h6"/>
+                                </svg>
+                                <span class="font-medium tracking-tight">Projects</span>
+                            </span>
+                        </x-nav-link>
+                        
                         
                         
                     </div>

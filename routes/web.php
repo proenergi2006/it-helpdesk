@@ -6,6 +6,8 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TrendController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TrixAttachmentController;
 
 // HALAMAN UTAMA diarahkan ke TicketController@index
 Route::get('/', [TicketController::class, 'index'])->name('welcome');
@@ -43,6 +45,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('documents', DocumentController::class)->except(['show']);
     Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])
     ->name('documents.preview');
+    Route::resource('projects', ProjectController::class)->except(['show']);
+    Route::middleware('auth')->post('/trix/upload', [TrixAttachmentController::class, 'store'])
+    ->name('trix.upload');
 
 });
 
