@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TrendController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\DocumentController;
 
 // HALAMAN UTAMA diarahkan ke TicketController@index
 Route::get('/', [TicketController::class, 'index'])->name('welcome');
@@ -36,6 +37,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/tickets/{id}/detail', [TicketController::class, 'detail']);
     Route::put('/tickets/{id}/transfer', [TicketController::class, 'transfer'])
         ->name('tickets.transfer');
+        Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
+        ->name('documents.download');
+
+    Route::resource('documents', DocumentController::class)->except(['show']);
+    Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])
+    ->name('documents.preview');
+
 });
 
 require __DIR__ . '/auth.php';
