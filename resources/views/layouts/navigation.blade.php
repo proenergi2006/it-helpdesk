@@ -89,15 +89,52 @@
                                 <span>{{ __('Dokumentasi') }}</span>
                             </span>
                         </x-nav-link> --}}
-                        <x-nav-link :href="route('projects.index')" :active="request()->routeIs('projects.*')"
-                            class="!border-0 !text-slate-300 hover:!text-white">
-                            <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 ring-1 ring-transparent hover:ring-cyan-400/30 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-300/90" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25A2.25 2.25 0 009.75 18.75h4.5A2.25 2.25 0 0016.5 16.5v-2.25M7.5 9.75V7.5A2.25 2.25 0 019.75 5.25h4.5A2.25 2.25 0 0116.5 7.5v2.25M9 12h6"/>
-                                </svg>
-                                <span class="font-medium tracking-tight">Projects</span>
-                            </span>
-                        </x-nav-link>
+                     {{-- Parent: Projects --}}
+<div x-data="{ openProjects: false }" class="relative">
+    <button
+        type="button"
+        @click="openProjects = !openProjects"
+        @click.outside="openProjects = false"
+        class="inline-flex items-center gap-2 px-3 py-2 rounded-xl
+               !border-0 !text-slate-300 hover:!text-white
+               hover:bg-white/5 ring-1 ring-transparent hover:ring-cyan-400/30 transition"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-300/90"
+            fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M7.5 14.25v2.25A2.25 2.25 0 009.75 18.75h4.5A2.25 2.25 0 0016.5 16.5v-2.25M7.5 9.75V7.5A2.25 2.25 0 019.75 5.25h4.5A2.25 2.25 0 0116.5 7.5v2.25M9 12h6"/>
+        </svg>
+
+        <span class="font-medium tracking-tight">Projects</span>
+
+        <svg class="w-4 h-4 text-slate-400 transition"
+             :class="openProjects ? 'rotate-180' : ''"
+             xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 9.75l-7.5 7.5-7.5-7.5"/>
+        </svg>
+    </button>
+
+    {{-- Dropdown --}}
+    <div
+        x-cloak
+        x-show="openProjects"
+        x-transition
+        class="absolute left-0 mt-2 w-56 rounded-xl
+               bg-slate-950/90 backdrop-blur
+               ring-1 ring-white/10 shadow-lg overflow-hidden z-50"
+    >
+        <a href="{{ route('projects.index') }}"
+           class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
+            📁 <span>Project List</span>
+        </a>
+
+        <a href="{{ route('projects.board') }}"
+           class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
+            📋 <span>Kanban Board</span>
+        </a>
+    </div>
+</div>
+
                         {{-- Parent: Knowledge / Dokumentasi --}}
 <div x-data="{ openDocs: false }" class="relative">
     <button
@@ -150,6 +187,7 @@
             <span>Meeting MoM</span>
         </a>
     </div>
+   
 </div>
 
                         {{-- <x-nav-link :href="route('meetings.index')" :active="request()->routeIs('meetings.*')">

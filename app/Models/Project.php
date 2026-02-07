@@ -60,5 +60,10 @@ public function logActivity(string $event, string $title, array $meta = []): voi
     ]);
 }
 
+public function scopeOrdered($q)
+{
+    return $q->orderBy('position');
+}
+
     
 }

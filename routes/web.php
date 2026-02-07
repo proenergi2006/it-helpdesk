@@ -10,6 +10,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TrixAttachmentController;
 use App\Http\Controllers\ProjectUpdateController;
 use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\ProjectBoardController;
 
 
 // HALAMAN UTAMA diarahkan ke TicketController@index
@@ -48,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('documents', DocumentController::class)->except(['show']);
     Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])
     ->name('documents.preview');
-    Route::resource('projects', ProjectController::class)->except(['show']);
+   
     Route::middleware('auth')->post('/trix/upload', [TrixAttachmentController::class, 'store'])
     ->name('trix.upload');
 
@@ -58,6 +59,12 @@ Route::middleware('auth')->group(function () {
  
      // trix upload (image/pdf/excel)
      Route::post('/trix/upload', [TrixAttachmentController::class, 'store'])->name('trix.upload');
+
+     Route::get('/projects/board', [ProjectBoardController::class, 'index'])->name('projects.board');
+     Route::post('/projects/board/move', [ProjectBoardController::class, 'move'])->name('projects.board.move');
+     Route::post('/projects/board/quick-add', [ProjectBoardController::class, 'quickAdd'])
+    ->name('projects.board.quickAdd');
+
      Route::resource('projects', ProjectController::class);
 
      Route::resource('meetings', MeetingController::class);
@@ -65,6 +72,8 @@ Route::middleware('auth')->group(function () {
 
      Route::get('meetings/{meeting}/export-pdf', [MeetingController::class, 'exportPdf'])
     ->name('meetings.export.pdf');
+
+   
 
 
 });

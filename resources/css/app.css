@@ -23,3 +23,16 @@ trix-toolbar .trix-button-group--file-tools {
     display: inline-flex !important;
   }
   
+  /* SweetAlert – Quick Add modern */
+.swal2-popup.qa-modal { border-radius: 18px; padding: 22px 22px 18px; }
+.swal2-title.qa-title { font-size: 20px; font-weight: 700; margin: 0 0 10px; }
+.swal2-html-container.qa-body { margin: 0; padding: 0; text-align: left; }
+.qa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.qa-grid .full { grid-column: 1 / -1; }
+.qa-label { font-size: 12px; color: #6b7280; margin-bottom: 6px; }
+.qa-input, .qa-select { width: 100%; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 12px; outline: none; }
+.qa-input:focus, .qa-select:focus { border-color: #60a5fa; box-shadow: 0 0 0 4px rgba(96,165,250,.15); }
+.qa-help { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+.qa-actions .swal2-confirm { border-radius: 12px; padding: 10px 16px; }
+.qa-actions .swal2-cancel { border-radius: 12px; padding: 10px 16px; }
+
