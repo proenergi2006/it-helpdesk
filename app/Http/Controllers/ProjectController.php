@@ -20,6 +20,9 @@ class ProjectController extends Controller
         if ($request->filled('status')) {
             $q->where('status', $request->status);
         }
+        if ($request->filled('category')) {
+            $q->where('category', $request->category);
+        }
         if ($request->filled('assigned_to')) {
             $q->where('assigned_to', $request->assigned_to);
         }
@@ -47,6 +50,7 @@ class ProjectController extends Controller
         $this->ensureProjectAdmin();
         $validated = $request->validate([
             'name'        => ['required','string','max:200'],
+            'category' => 'required|in:infra,program',
             'description' => ['nullable','string'], // HTML dari editor
             'status'      => ['required','in:backlog,todo,in_progress,review,done'],
             'start_date'  => ['nullable','date'],
@@ -60,6 +64,7 @@ class ProjectController extends Controller
         
         $project = Project::create([
             'name'        => $validated['name'],
+            'category' => $validated['category'],
             'description' => $validated['description'] ?? null,
             'status'      => $validated['status'],
             'start_date'  => $validated['start_date'] ?? null,
@@ -87,6 +92,7 @@ class ProjectController extends Controller
     {
         $validated = $request->validate([
             'name'        => ['required','string','max:200'],
+            'category' => 'required|in:infra,program',
             'description' => ['nullable','string'],
             'status'      => ['required','in:backlog,todo,in_progress,review,done'],
             'start_date'  => ['nullable','date'],
@@ -104,6 +110,7 @@ class ProjectController extends Controller
         
         $project->update([
             'name'        => $validated['name'],
+            'category' => $validated['category'],
             'description' => $validated['description'] ?? null,
             'status'      => $validated['status'],
             'start_date'  => $validated['start_date'] ?? null,

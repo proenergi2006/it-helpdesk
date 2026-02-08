@@ -22,7 +22,7 @@
 
             <!-- Filter -->
             <div class="bg-white p-4 rounded-lg shadow">
-                <form class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <form class="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <input
                         name="q"
                         value="{{ request('q') }}"
@@ -36,6 +36,13 @@
                             <option value="{{ $k }}" @selected(request('status')===$k)>{{ $v }}</option>
                         @endforeach
                     </select>
+
+                    <select name="category" class="rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">All type</option>
+                        <option value="program" @selected(request('category')==='program')>Program</option>
+                        <option value="infra" @selected(request('category')==='infra')>Infra</option>
+                    </select>
+                    
 
                     <select name="assigned_to" class="rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">All assignee</option>
@@ -118,10 +125,25 @@
                             @endphp
 
                             <tr>
-                                <td class="px-4 py-3 font-medium">
-                                    {{ $p->name }}
-                                    <div class="text-xs text-gray-500">#PRJ-{{ $p->id }}</div>
+                                <td class="px-4 py-3">
+                                    <div class="font-medium text-gray-900">{{ $p->name }}</div>
+                                
+                                    <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                                        <span>#PRJ-{{ $p->id }}</span>
+                                
+                                        @php
+                                            $catLabel = $p->category === 'infra' ? 'Infra' : 'Program';
+                                            $catClass = $p->category === 'infra'
+                                                ? 'bg-cyan-50 text-cyan-700 border-cyan-100'
+                                                : 'bg-indigo-50 text-indigo-700 border-indigo-100';
+                                        @endphp
+                                
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded border {{ $catClass }}">
+                                            {{ $catLabel }}
+                                        </span>
+                                    </div>
                                 </td>
+                                
 
                                 <td class="px-4 py-3">
                                     @if($p->assignees->count())

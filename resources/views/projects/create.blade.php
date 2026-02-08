@@ -29,6 +29,20 @@
                         @error('name') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tipe Project</label>
+                    
+                        <select name="category"
+                                class="mt-1 w-full rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+                                required>
+                            <option value="program" @selected(old('category','program')==='program')>Program / Aplikasi</option>
+                            <option value="infra" @selected(old('category')==='infra')>Infra / Network / Server</option>
+                        </select>
+                    
+                        @error('category') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+                    
+
                     {{-- 2 columns area --}}
                    {{-- Deskripsi full width --}}
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
