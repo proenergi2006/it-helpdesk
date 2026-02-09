@@ -32,10 +32,22 @@
 
                     <select name="type" class="rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="">Semua jenis</option>
-                        @foreach(['CR'=>'Change Request','BRD'=>'Business Requirement','DEV'=>'Development','UAT'=>'UAT','IMP'=>'Implement Prod'] as $k=>$v)
-                            <option value="{{ $k }}" @selected(request('type')===$k)>{{ $v }}</option>
+                    
+                        @foreach([
+                            'CR'  => 'Change Request',
+                            'BRD' => 'Business Requirement',
+                            'DEV' => 'Development',
+                            'UAT' => 'UAT',
+                            'IMP' => 'Implement Prod',
+                            'UG'  => 'User Guide',
+                            'DOC' => 'Dokumentasi'
+                        ] as $k => $v)
+                            <option value="{{ $k }}" @selected(request('type') === $k)>
+                                {{ $v }}
+                            </option>
                         @endforeach
                     </select>
+                    
 
                     <button class="rounded-lg bg-gray-900 text-white px-4 py-2 hover:bg-gray-800">
                         Filter
