@@ -24,12 +24,24 @@
                     <div>
                         <label class="block text-sm font-medium">Jenis Dokumen</label>
                         <select name="type" class="mt-1 w-full rounded-lg border-gray-300" required>
-                            @foreach(['CR'=>'Change Request','BRD'=>'Business Requirement','DEV'=>'Development','UAT'=>'UAT','IMP'=>'Implement Prod'] as $k=>$v)
-                                <option value="{{ $k }}" @selected(old('type')===$k)>{{ $v }}</option>
+                            @foreach([
+                                'CR'  => 'Change Request',
+                                'BRD' => 'Business Requirement',
+                                'DEV' => 'Development',
+                                'UAT' => 'UAT',
+                                'IMP' => 'Implement Prod',
+                                'DOC' => 'Dokumentasi',
+                                'UG'  => 'User Guide',
+                            ] as $k => $v)
+                                <option value="{{ $k }}" @selected(old('type') === $k)>{{ $v }}</option>
                             @endforeach
                         </select>
-                        @error('type') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                    
+                        @error('type')
+                            <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
+                        @enderror
                     </div>
+                    
 
                     <div>
                         <label class="block text-sm font-medium">Catatan (opsional)</label>
