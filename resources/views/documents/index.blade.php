@@ -108,7 +108,7 @@
                                 <td class="px-4 py-3">{{ $doc->creator?->name ?? '-' }}</td>
                                 <td class="px-4 py-3">{{ $doc->updater?->name ?? '-' }}</td>
 
-                                <td class="px-4 py-3">
+                                {{-- <td class="px-4 py-3">
                                     <div class="flex flex-wrap gap-2">
                                         <a class="px-3 py-1 rounded bg-gray-900 text-white hover:bg-gray-800"
                                            href="{{ route('documents.download', $doc) }}">
@@ -128,7 +128,50 @@
                                             </button>
                                         </form>
                                     </div>
+                                </td> --}}
+
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2">
+                                        {{-- Download --}}
+                                        <a href="{{ route('documents.download', $doc) }}"
+                                           title="Download"
+                                           class="p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 10.5L12 15m0 0l4.5-4.5M12 15V3" />
+                                            </svg>
+                                        </a>
+                                
+                                        {{-- Edit --}}
+                                        <a href="{{ route('documents.edit', $doc) }}"
+                                           title="Edit"
+                                           class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-2.685.896.896-2.685a4.5 4.5 0 011.13-1.897L16.862 4.487z" />
+                                            </svg>
+                                        </a>
+                                
+                                        {{-- Delete --}}
+                                        <form method="POST"
+                                              action="{{ route('documents.destroy', $doc) }}"
+                                              class="doc-delete">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    title="Delete"
+                                                    class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
+                                
                             </tr>
                         @empty
                             <tr>

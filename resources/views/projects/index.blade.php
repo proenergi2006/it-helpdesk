@@ -200,12 +200,12 @@
                                     {{ $p->done_date?->format('d M Y') ?? '-' }}
                                 </td>
 
-                                <td class="px-4 py-3">
+                                {{-- <td class="px-4 py-3">
                                     <div class="flex flex-wrap gap-2">
                                         <a href="{{ route('projects.show', $p) }}"
-   class="px-3 py-1 rounded bg-gray-800 text-white hover:bg-gray-700">
-    Detail
-</a>
+                                        class="px-3 py-1 rounded bg-gray-800 text-white hover:bg-gray-700">
+                                            Detail
+                                        </a>
 
                                         <a href="{{ route('projects.edit', $p) }}"
                                            class="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-500">
@@ -220,7 +220,54 @@
                                             </button>
                                         </form>
                                     </div>
+                                </td> --}}
+
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-2">
+                                
+                                        {{-- Detail --}}
+                                        <a href="{{ route('projects.show', $p) }}"
+                                           title="Detail"
+                                           class="p-2 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M12 6.75c-5.25 0-9 5.25-9 5.25s3.75 5.25 9 5.25 9-5.25 9-5.25-3.75-5.25-9-5.25z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
+                                            </svg>
+                                        </a>
+                                
+                                        {{-- Edit --}}
+                                        <a href="{{ route('projects.edit', $p) }}"
+                                           title="Edit"
+                                           class="p-2 rounded-lg text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                 viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-2.685.896.896-2.685a4.5 4.5 0 011.13-1.897L16.862 4.487z" />
+                                            </svg>
+                                        </a>
+                                
+                                        {{-- Delete --}}
+                                        <form method="POST"
+                                              action="{{ route('projects.destroy', $p) }}"
+                                              class="prj-delete">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    title="Delete"
+                                                    class="p-2 rounded-lg text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                     viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                
+                                    </div>
                                 </td>
+                                
                             </tr>
                         @empty
                             <tr>
