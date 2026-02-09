@@ -34,7 +34,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'project_name' => ['required','string','max:150'],
             'title'        => ['required','string','max:200'],
-            'type'         => ['required','in:CR,BRD,DEV,UAT,IMP'],
+            'type'         => ['required','in:CR,BRD,DEV,UAT,IMP,DOC,UG'],
             'notes'        => ['nullable','string','max:2000'],
             'file'         => ['required','file','max:20480'], // 20MB
         ]);
@@ -76,7 +76,7 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'project_name' => ['required','string','max:150'],
             'title'        => ['required','string','max:200'],
-            'type'         => ['required','in:CR,BRD,DEV,UAT,IMP'],
+            'type'         => ['required','in:CR,BRD,DEV,UAT,IMP,DOC,UG'],
             'notes'        => ['nullable','string','max:2000'],
             'file'         => ['nullable','file','max:20480'],
         ]);
