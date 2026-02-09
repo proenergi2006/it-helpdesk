@@ -24,8 +24,12 @@ class ProjectController extends Controller
             $q->where('category', $request->category);
         }
         if ($request->filled('assigned_to')) {
-            $q->where('assigned_to', $request->assigned_to);
+            $assigneeId = (int) $request->assigned_to;
+            $q->whereHas('assignees', function ($qq) use ($assigneeId) {
+                $qq->where('users.id', $assigneeId);
+            });
         }
+        
         if (request('mine') === '1') {
             $q->whereHas('assignees', fn($qq) => $qq->where('users.id', auth()->id()));
         }
