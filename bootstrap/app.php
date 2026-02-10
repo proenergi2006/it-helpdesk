@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,42 +19,39 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
 
         /**
-         * 1) Jika session habis / user belum login
-         *    -> arahkan ke halaman login (bukan error page)
+         * 1) Session habis / belum login -> redirect ke login
+         * (Laravel 12: render() harus callable, jadi type-hint exception di parameter)
          */
-        $exceptions->render(AuthenticationException::class, function ($e, $request) {
-            // kalau request API/AJAX bisa return json 401
+        $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Unauthenticated.'], 401);
             }
-
             return redirect()->route('login');
         });
 
         /**
-         * 2) Jika 403 tapi ternyata user SUDAH tidak login (session expired)
-         *    -> redirect login agar UX enak
+         * 2) 403 tapi user ternyata sudah logout/expired -> redirect login
          */
         $exceptions->render(function (\Throwable $e, $request) {
-            $code = (int) $e->getCode();
+            $status = ($e instanceof HttpExceptionInterface) ? $e->getStatusCode() : null;
 
-            if ($code === Response::HTTP_FORBIDDEN && !auth()->check()) {
+            if ($status === Response::HTTP_FORBIDDEN && !auth()->check()) {
                 if ($request->expectsJson()) {
                     return response()->json(['message' => 'Unauthenticated.'], 401);
                 }
-
                 return redirect()->route('login');
             }
 
-            return null; // biarkan Laravel handle sisanya
+            return null; // biarkan default handler
         });
 
         /**
-         * 3) (Opsional tapi sering kepakai) error 419 CSRF/session expired
-         *    -> redirect login + flash message
+         * 3) 419 Page Expired (CSRF/session expired) -> redirect login
          */
-        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
-            if ($e->getStatusCode() === 419) {
+        $exceptions->render(function (\Throwable $e, $request) {
+            $status = ($e instanceof HttpExceptionInterface) ? $e->getStatusCode() : null;
+
+            if ($status === 419) {
                 if ($request->expectsJson()) {
                     return response()->json(['message' => 'Page expired.'], 419);
                 }
