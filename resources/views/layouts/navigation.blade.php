@@ -18,7 +18,8 @@
                             </span>
 
                             <div class="hidden sm:block leading-tight">
-                                <div class="text-xs text-slate-400">Internal Support</div reopening="1"/>
+                                <div class="text-xs text-slate-400">Internal Support</div>
+
                                 <div class="text-sm font-semibold text-slate-100">
                                     Helpdesk <span class="text-cyan-300">Portal</span>
                                 </div>
@@ -203,7 +204,7 @@
                 </div>
 
                 <!-- Right -->
-                <div class="hidden sm:flex sm:items-center gap-3">
+                {{-- <div class="hidden sm:flex sm:items-center gap-3">
                     <!-- Small status pill (optional) -->
                     <div class="hidden md:inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-300 ring-1 ring-white/10">
                         <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
@@ -259,7 +260,75 @@
                             </div>
                         </x-slot>
                     </x-dropdown>
+                </div> --}}
+
+                <!-- Right -->
+<div class="hidden sm:flex sm:items-center gap-3">
+    <!-- Small status pill (optional) -->
+    <div class="hidden md:inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-300 ring-1 ring-white/10">
+        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+        System Online
+    </div>
+
+    @auth
+        <!-- Settings Dropdown -->
+        <x-dropdown align="right" width="48">
+            <x-slot name="trigger">
+                <button
+                    class="inline-flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 hover:bg-white/10 transition focus:outline-none">
+                    <span class="grid h-8 w-8 place-items-center rounded-xl bg-slate-950/40 ring-1 ring-white/10">
+                        <svg class="h-4 w-4 text-cyan-300" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M20 21a8 8 0 1 0-16 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+
+                    <div class="text-left leading-tight">
+                        <div class="text-sm">{{ auth()->user()->name }}</div>
+                        <div class="text-xs text-slate-400">{{ auth()->user()->email }}</div>
+                    </div>
+
+                    <svg class="h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </x-slot>
+
+            <x-slot name="content">
+                <div class="rounded-xl bg-slate-950 text-slate-200 ring-1 ring-white/10 overflow-hidden">
+                    <div class="px-4 py-3 border-b border-white/10">
+                        <div class="text-sm font-semibold">{{ auth()->user()->name }}</div>
+                        <div class="text-xs text-slate-400">{{ auth()->user()->email }}</div>
+                    </div>
+
+                    <div class="py-1">
+                        <x-dropdown-link :href="route('profile.edit')"
+                            class="!text-slate-200 hover:!bg-white/5 hover:!text-white">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <x-dropdown-link :href="route('logout')"
+                                class="!text-slate-200 hover:!bg-white/5 hover:!text-white"
+                                onclick="event.preventDefault(); this.closest('form').submit();">
+                                {{ __('Log Out') }}
+                            </x-dropdown-link>
+                        </form>
+                    </div>
                 </div>
+            </x-slot>
+        </x-dropdown>
+    @endauth
+
+    @guest
+        <a href="{{ route('login') }}"
+           class="inline-flex items-center gap-2 rounded-2xl bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 ring-1 ring-white/10 hover:bg-white/10 hover:ring-cyan-400/30 transition">
+            Login
+        </a>
+    @endguest
+</div>
+
 
                 <!-- Hamburger (Mobile) -->
                 <div class="flex items-center sm:hidden">
@@ -295,16 +364,17 @@
                     📊 {{ __('Report') }}
                 </a>
 
+                @auth
                 <div class="mt-3 rounded-2xl bg-slate-950/50 p-4 ring-1 ring-white/10">
-                    <div class="text-sm font-semibold">{{ Auth::user()->name }}</div>
-                    <div class="text-xs text-slate-400">{{ Auth::user()->email }}</div>
-
+                    <div class="text-sm font-semibold text-slate-200">{{ auth()->user()->name }}</div>
+                    <div class="text-xs text-slate-400">{{ auth()->user()->email }}</div>
+                
                     <div class="mt-3 space-y-2">
                         <a href="{{ route('profile.edit') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
                             {{ __('Profile') }}
                         </a>
-
+                
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit"
@@ -314,6 +384,17 @@
                         </form>
                     </div>
                 </div>
+                @endauth
+                
+                @guest
+                <div class="mt-3 rounded-2xl bg-slate-950/50 p-4 ring-1 ring-white/10">
+                    <a href="{{ route('login') }}"
+                       class="block text-center rounded-xl bg-white/10 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/15 transition">
+                        Login
+                    </a>
+                </div>
+                @endguest
+                
             </div>
         </div>
     </div>
