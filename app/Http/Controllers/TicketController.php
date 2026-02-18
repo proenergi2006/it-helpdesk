@@ -104,7 +104,8 @@ class TicketController extends Controller
             'iwan.hermawan@proenergi.co.id',
             'fadli.fathur@proenergi.co.id',
             'gary.salsabilla@proenergi.co.id',
-            'sultony.saddam@proenergi.co.id'
+            'sultony.saddam@proenergi.co.id',
+            'ferry.indrawan@plazatoyota.co.id'
         ])->send(new TicketCreatedTeam($ticket));
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
