@@ -182,7 +182,7 @@ private function ensureProjectAdmin(): void
 {
     $allowed = [
         'iwan.hermawan@proenergi.co.id',
-        'reno@proenergi.co.id',
+        'Reno.Oktavian@proenergi.com',
     ];
 
     abort_unless(in_array(auth()->user()->email, $allowed, true), 403);
