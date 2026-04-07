@@ -14,33 +14,37 @@ use App\Mail\TicketResolvedUser;
 
 class TicketController extends Controller
 {
-    /**
-     * 🏠 Halaman utama antrian (untuk user publik)
-     */
     public function index()
     {
         $tickets = Ticket::with('takenByUser')->orderBy('created_at', 'desc')->get();
-
+    
         $totalToday = Ticket::whereDate('created_at', now())->count();
         $openCount = Ticket::where('status', 'open')->count();
         $resolvedCount = Ticket::where('status', 'resolved')->count();
-
+    
         $softwareTickets = Ticket::where('category', 'software')
             ->where('status', 'open')
             ->orderBy('id')
             ->limit(3)
             ->get();
-
+    
         $hardwareTickets = Ticket::where('category', 'hardware')
             ->where('status', 'open')
             ->orderBy('id')
             ->limit(2)
             ->get();
-
+    
+        $networkMultimediaTickets = Ticket::where('category', 'network&multimedia')
+            ->where('status', 'open')
+            ->orderBy('id')
+            ->limit(2)
+            ->get();
+    
         return view('welcome', compact(
             'tickets',
             'softwareTickets',
             'hardwareTickets',
+            'networkMultimediaTickets',
             'totalToday',
             'openCount',
             'resolvedCount'
@@ -137,6 +141,7 @@ class TicketController extends Controller
                     'id'             => $t->id,
                     'nama'           => $t->nama,
                     'title'          => $t->title,
+                    'description'    => $t->description,
                     'cabang'         => $t->cabang,
                     'category'       => $t->category,
                     'status'         => $t->status,
@@ -146,7 +151,7 @@ class TicketController extends Controller
                     'taken_by_name'  => $t->takenByUser->name ?? null,
                 ];
             });
-
+    
         return response()->json($tickets);
     }
 

@@ -18,15 +18,8 @@
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: .7;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
         }
 
         body {
@@ -34,7 +27,6 @@
         }
 
         @media (max-width:768px) {
-
             .dataTables_wrapper .dataTables_length,
             .dataTables_wrapper .dataTables_filter {
                 text-align: left;
@@ -51,14 +43,12 @@
                 transform: translateY(20px);
                 opacity: 0;
             }
-
             to {
                 transform: translateY(0);
                 opacity: 1;
             }
         }
 
-        /* Scroll bar halus */
         #chat-messages::-webkit-scrollbar {
             width: 6px;
         }
@@ -68,38 +58,50 @@
             border-radius: 4px;
         }
 
-        /* Lebarkan kolom STATUS di tabel antrian */
-        #ticketTable th:nth-child(7),
-        #ticketTable td:nth-child(7) {
-            min-width: 150px;
-            /* kamu bisa ubah jadi 180px kalau masih sempit */
-            text-align: center;
-            white-space: normal;
-            /* biar teks bisa turun ke bawah kalau panjang */
-            word-wrap: break-word;
-        }
-
-        /* Biar badge status tetap rapi di tengah */
-        #ticketTable td:nth-child(7) span {
-            display: inline-block;
-            min-width: 110px;
-            padding: 6px 10px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 600;
-            text-align: center;
-            color: #fff;
-        }
-
-        /* Tambahan: sedikit merapikan cell tabel biar tidak padat */
         #ticketTable td,
         #ticketTable th {
             vertical-align: middle;
         }
+
+        .ticket-clickable {
+            cursor: pointer;
+        }
+
+        .ticket-clickable:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .panel-card {
+            cursor: pointer;
+            transition: all .2s ease;
+        }
+
+        .panel-card:hover {
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
-<body class="font-sans" x-data="{ showModal: false }">
+<body class="font-sans"
+    x-data="{
+        showModal: false,
+        showDetailModal: false,
+        detailTicket: {
+            code: '',
+            nama: '',
+            title: '',
+            cabang: '',
+            category: '',
+            klasifikasi: '',
+            priority: '',
+            status: '',
+            description: '',
+            takenBy: '',
+            createdAt: ''
+        }
+    }">
+
     <div class="max-w-7xl mx-auto py-6 px-3 sm:px-6">
 
         {{-- Header --}}
@@ -125,28 +127,39 @@
         </div>
 
         {{-- Panel Antrian --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {{-- SOFTWARE --}}
             <div class="bg-blue-600 text-white rounded-2xl shadow-lg p-4 md:p-6">
                 <h2 class="text-lg md:text-xl font-semibold mb-3 uppercase tracking-wider text-center">Software</h2>
                 <div id="panelSoftware" class="grid grid-cols-1 gap-3">
                     @forelse ($softwareTickets as $ticket)
-                        <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
+                        @php
+                            $cat = strtoupper(substr($ticket->category, 0, 1));
+                            $klas = strtoupper(substr($ticket->klasifikasi, 0, 1));
+                            $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                        @endphp
 
-                            @php
-                                $cat = strtoupper(substr($ticket->category, 0, 1)); // S / H
-                                $klas = strtoupper(substr($ticket->klasifikasi, 0, 1)); // I / R
-                                $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
-                            @endphp
-
-                            <div class="text-3xl md:text-4xl font-extrabold mb-1">
-                                #{{ $code }}
-                            </div>
-
+                        <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md panel-card"
+                            @click="
+                                detailTicket = {
+                                    code: '{{ $code }}',
+                                    nama: @js($ticket->nama ?? '-'),
+                                    title: @js($ticket->title ?? '-'),
+                                    cabang: @js($ticket->cabang ?? '-'),
+                                    category: @js($ticket->category ?? '-'),
+                                    klasifikasi: @js($ticket->klasifikasi ?? '-'),
+                                    priority: @js($ticket->priority ?? '-'),
+                                    status: @js($ticket->status ?? '-'),
+                                    description: @js($ticket->description ?? '-'),
+                                    takenBy: @js($ticket->takenByUser?->name ?? '-'),
+                                    createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
+                                };
+                                showDetailModal = true;
+                            ">
+                            <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
-                            <div class="text-sm mt-1">Status: <span
-                                    class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
                         </div>
                     @empty
                         <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
@@ -159,21 +172,72 @@
                 <h2 class="text-lg md:text-xl font-semibold mb-3 uppercase tracking-wider text-center">Hardware</h2>
                 <div id="panelHardware" class="grid grid-cols-1 gap-3">
                     @forelse ($hardwareTickets as $ticket)
-                        <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
-                            @php
-                                $cat = strtoupper(substr($ticket->category, 0, 1)); // H
-                                $klas = strtoupper(substr($ticket->klasifikasi, 0, 1)); // I / R
-                                $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
-                            @endphp
+                        @php
+                            $cat = strtoupper(substr($ticket->category, 0, 1));
+                            $klas = strtoupper(substr($ticket->klasifikasi, 0, 1));
+                            $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                        @endphp
 
-                            <div class="text-3xl md:text-4xl font-extrabold mb-1">
-                                #{{ $code }}
-                            </div>
-
+                        <div class="bg-green-500 rounded-xl p-4 text-center shadow-md panel-card"
+                            @click="
+                                detailTicket = {
+                                    code: '{{ $code }}',
+                                    nama: @js($ticket->nama ?? '-'),
+                                    title: @js($ticket->title ?? '-'),
+                                    cabang: @js($ticket->cabang ?? '-'),
+                                    category: @js($ticket->category ?? '-'),
+                                    klasifikasi: @js($ticket->klasifikasi ?? '-'),
+                                    priority: @js($ticket->priority ?? '-'),
+                                    status: @js($ticket->status ?? '-'),
+                                    description: @js($ticket->description ?? '-'),
+                                    takenBy: @js($ticket->takenByUser?->name ?? '-'),
+                                    createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
+                                };
+                                showDetailModal = true;
+                            ">
+                            <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
-                            <div class="text-sm mt-1">Status: <span
-                                    class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                        </div>
+                    @empty
+                        <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
+                    @endforelse
+                </div>
+            </div>
+
+            {{-- NETWORK & MULTIMEDIA --}}
+            <div class="bg-purple-600 text-white rounded-2xl shadow-lg p-4 md:p-6">
+                <h2 class="text-lg md:text-xl font-semibold mb-3 uppercase tracking-wider text-center">Network & Multimedia</h2>
+                <div id="panelNetworkMultimedia" class="grid grid-cols-1 gap-3">
+                    @forelse ($networkMultimediaTickets as $ticket)
+                        @php
+                            $cat = strtoupper(substr($ticket->category, 0, 1));
+                            $klas = strtoupper(substr($ticket->klasifikasi, 0, 1));
+                            $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                        @endphp
+
+                        <div class="bg-purple-500 rounded-xl p-4 text-center shadow-md panel-card"
+                            @click="
+                                detailTicket = {
+                                    code: '{{ $code }}',
+                                    nama: @js($ticket->nama ?? '-'),
+                                    title: @js($ticket->title ?? '-'),
+                                    cabang: @js($ticket->cabang ?? '-'),
+                                    category: @js($ticket->category ?? '-'),
+                                    klasifikasi: @js($ticket->klasifikasi ?? '-'),
+                                    priority: @js($ticket->priority ?? '-'),
+                                    status: @js($ticket->status ?? '-'),
+                                    description: @js($ticket->description ?? '-'),
+                                    takenBy: @js($ticket->takenByUser?->name ?? '-'),
+                                    createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
+                                };
+                                showDetailModal = true;
+                            ">
+                            <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
+                            <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
+                            <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
                         </div>
                     @empty
                         <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
@@ -211,6 +275,7 @@
                             <th class="p-2 text-left">#</th>
                             <th class="p-2 text-left">Nama</th>
                             <th class="p-2 text-left">Judul Ticket</th>
+                            <th class="p-2 text-left">Deskripsi Masalah</th>
                             <th class="p-2 text-left">Cabang</th>
                             <th class="p-2 text-left">Kategori</th>
                             <th class="p-2 text-left">Klasifikasi</th>
@@ -222,29 +287,53 @@
                     </thead>
                     <tbody id="ticketBody">
                         @forelse ($tickets as $ticket)
+                            @php
+                                $cat = strtoupper(substr($ticket->category, 0, 1));
+                                $klas = strtoupper(substr($ticket->klasifikasi, 0, 1));
+                                $code = $cat . $klas . str_pad($ticket->id, 3, '0', STR_PAD_LEFT);
+                            @endphp
+
                             <tr class="border-b hover:bg-blue-50 transition">
-                                <td class="p-2 font-semibold text-blue-700">
-                                    {{ strtoupper(substr($ticket->category, 0, 1)) }}{{ str_pad($ticket->id, 3, '0', STR_PAD_LEFT) }}
-                                </td>
+                                <td class="p-2 font-semibold text-blue-700">{{ $code }}</td>
                                 <td class="p-2">{{ $ticket->nama }}</td>
                                 <td class="p-2">{{ $ticket->title }}</td>
+                                <td class="p-2">
+                                    <button type="button"
+                                        class="ticket-clickable text-left"
+                                        @click="
+                                            detailTicket = {
+                                                code: '{{ $code }}',
+                                                nama: @js($ticket->nama ?? '-'),
+                                                title: @js($ticket->title ?? '-'),
+                                                cabang: @js($ticket->cabang ?? '-'),
+                                                category: @js($ticket->category ?? '-'),
+                                                klasifikasi: @js($ticket->klasifikasi ?? '-'),
+                                                priority: @js($ticket->priority ?? '-'),
+                                                status: @js($ticket->status ?? '-'),
+                                                description: @js($ticket->description ?? '-'),
+                                                takenBy: @js($ticket->takenByUser?->name ?? '-'),
+                                                createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
+                                            };
+                                            showDetailModal = true;
+                                        ">
+                                        {{ \Illuminate\Support\Str::limit($ticket->description ?? '-', 40) }}
+                                    </button>
+                                </td>
                                 <td class="p-2">{{ $ticket->cabang }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->category }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->klasifikasi ?? '-' }}</td>
                                 <td class="p-2">
-                                    <span
-                                        class="px-3 py-1 rounded-full text-white text-xs font-semibold
-        {{ $ticket->priority === 'Low'
-            ? 'bg-green-600'
-            : ($ticket->priority === 'Medium'
-                ? 'bg-yellow-500'
-                : 'bg-red-600') }}">
+                                    <span class="px-3 py-1 rounded-full text-white text-xs font-semibold
+                                        {{ $ticket->priority === 'Low'
+                                            ? 'bg-green-600'
+                                            : ($ticket->priority === 'Medium'
+                                                ? 'bg-yellow-500'
+                                                : 'bg-red-600') }}">
                                         {{ $ticket->priority }}
                                     </span>
                                 </td>
                                 <td class="p-2">
-                                    <span
-                                        class="px-3 py-1 rounded-full text-white text-xs font-semibold
+                                    <span class="px-3 py-1 rounded-full text-white text-xs font-semibold
                                         {{ $ticket->status === 'open'
                                             ? 'bg-yellow-500'
                                             : ($ticket->status === 'in_progress'
@@ -255,14 +344,12 @@
                                         {{ ucfirst($ticket->status) }}
                                     </span>
                                 </td>
-                                <td class="p-2">
-                                    {{ $ticket->takenByUser?->name ?? '-' }}
-                                </td>
+                                <td class="p-2">{{ $ticket->takenByUser?->name ?? '-' }}</td>
                                 <td class="p-2">{{ $ticket->created_at->format('d/m/Y H:i') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-6 text-gray-500">Belum ada ticket</td>
+                                <td colspan="11" class="text-center py-6 text-gray-500">Belum ada ticket</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -283,11 +370,10 @@
         </p>
     </footer>
 
-    {{-- 🌟 Modal Form Tambah Ticket --}}
+    {{-- Modal Form Tambah Ticket --}}
     <div x-show="showModal" x-transition
         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-8 relative mx-3 overflow-y-auto max-h-[90vh]">
-            {{-- Header Modal --}}
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-semibold text-blue-700 flex items-center gap-2">
                     📝 Buat Ticket Baru
@@ -297,21 +383,16 @@
                 </button>
             </div>
 
-            {{-- Form Ticket --}}
-            <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data"
-                class="space-y-6">
+            <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
 
-                {{-- GRID WRAPPER --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {{-- Nama --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Nama</label>
                         <input name="nama" type="text"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
-                    {{-- Email --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Email</label>
                         <input name="email" type="email"
@@ -329,7 +410,6 @@
                             placeholder="contoh: orang1@proenergi.co.id, orang2@proenergi.co.id">
                     </div>
 
-                    {{-- Cabang --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Cabang</label>
                         <select name="cabang"
@@ -346,7 +426,6 @@
                         </select>
                     </div>
 
-                    {{-- Kategori --}}
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Kategori</label>
                         <select name="category"
@@ -358,7 +437,6 @@
                         </select>
                     </div>
 
-                    {{-- Klasifikasi --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Klasifikasi</label>
                         <select name="klasifikasi"
@@ -380,26 +458,21 @@
                         </select>
                     </div>
 
-
-                    {{-- Judul Ticket (Full width) --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Judul Ticket</label>
                         <input name="title" type="text"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
-                    {{-- Deskripsi (Full width) --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">Deskripsi Masalah</label>
                         <textarea name="description" rows="4"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
                     </div>
 
-                    {{-- Attachment (opsional, max 3 file, 2MB, jpg/png/pdf) --}}
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">
-                            Lampiran (Opsional) <span class="text-gray-500 text-xs">(maks. 3 file, 2MB,
-                                PDF/JPG/PNG)</span>
+                            Lampiran (Opsional) <span class="text-gray-500 text-xs">(maks. 3 file, 2MB, PDF/JPG/PNG)</span>
                         </label>
                         <input type="file" name="attachments[]" id="attachments"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-1"
@@ -407,7 +480,6 @@
                     </div>
                 </div>
 
-                {{-- Tombol Aksi --}}
                 <div class="flex justify-end space-x-3 pt-6 border-t">
                     <button type="button" @click="showModal = false"
                         class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg font-medium transition-all">
@@ -422,12 +494,80 @@
         </div>
     </div>
 
+    {{-- Modal Detail Ticket --}}
+    <div x-show="showDetailModal" x-transition
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-3">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-semibold text-blue-700">📄 Detail Ticket</h2>
+                <button @click="showDetailModal = false"
+                    class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+                    &times;
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-500">Kode Ticket</p>
+                    <p class="font-semibold text-gray-800" x-text="'#' + detailTicket.code"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Nama</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.nama"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Cabang</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.cabang"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Kategori</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.category"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Klasifikasi</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.klasifikasi"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Priority</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.priority"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Status</p>
+                    <p class="font-semibold text-gray-800 capitalize" x-text="detailTicket.status"></p>
+                </div>
+                <div>
+                    <p class="text-gray-500">Dikerjakan Oleh</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.takenBy"></p>
+                </div>
+                <div class="md:col-span-2">
+                    <p class="text-gray-500">Judul Ticket</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.title"></p>
+                </div>
+                <div class="md:col-span-2">
+                    <p class="text-gray-500">Waktu Dibuat</p>
+                    <p class="font-semibold text-gray-800" x-text="detailTicket.createdAt"></p>
+                </div>
+                <div class="md:col-span-2">
+                    <p class="text-gray-500">Deskripsi Masalah</p>
+                    <div class="mt-1 p-4 rounded-lg bg-gray-50 border text-gray-700 whitespace-pre-line"
+                        x-text="detailTicket.description || '-'"></div>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-6">
+                <button type="button" @click="showDetailModal = false"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="chat-toggle"
         class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 flex items-center justify-center rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-all">
         💬
     </div>
 
-    <!-- Kotak chat (awalnya disembunyikan) -->
     <div id="chatbot"
         class="hidden fixed bottom-20 right-6 w-80 bg-white rounded-xl shadow-lg border border-gray-200">
         <div class="bg-blue-600 text-white p-3 rounded-t-xl font-semibold flex justify-between items-center">
@@ -447,39 +587,20 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.querySelector('form[action="{{ route('tickets.store') }}"]');
-            const requiredFields = [{
-                    name: 'nama',
-                    label: 'Nama'
-                },
-                {
-                    name: 'email',
-                    label: 'Email'
-                },
-                {
-                    name: 'cabang',
-                    label: 'Cabang'
-                },
-                {
-                    name: 'category',
-                    label: 'Kategori'
-                },
-                {
-                    name: 'klasifikasi',
-                    label: 'Klasifikasi'
-                },
-                {
-                    name: 'priority',
-                    label: 'Priority'
-                },
-                {
-                    name: 'title',
-                    label: 'Judul Ticket'
-                },
+            const requiredFields = [
+                { name: 'nama', label: 'Nama' },
+                { name: 'email', label: 'Email' },
+                { name: 'cabang', label: 'Cabang' },
+                { name: 'category', label: 'Kategori' },
+                { name: 'klasifikasi', label: 'Klasifikasi' },
+                { name: 'priority', label: 'Priority' },
+                { name: 'title', label: 'Judul Ticket' },
+                { name: 'description', label: 'Deskripsi Masalah' },
             ];
+
             const fileInput = document.getElementById('attachments');
 
             form.addEventListener('submit', function(e) {
-                // === VALIDASI FIELD WAJIB ===
                 for (const field of requiredFields) {
                     const input = form.querySelector(`[name="${field.name}"]`);
                     if (!input || input.value.trim() === '') {
@@ -495,7 +616,6 @@
                     }
                 }
 
-                // === VALIDASI FILE UPLOAD ===
                 const files = fileInput.files;
                 if (files.length > 3) {
                     e.preventDefault();
@@ -536,6 +656,7 @@
                 }
             });
         });
+
         document.addEventListener("DOMContentLoaded", function() {
             const chatToggle = document.getElementById("chat-toggle");
             const chatBox = document.getElementById("chatbot");
@@ -546,20 +667,18 @@
 
             let hasOpened = false;
 
-            // === buka/tutup chat ===
             chatToggle.addEventListener("click", () => {
                 chatBox.classList.toggle("hidden");
                 chatToggle.classList.toggle("hidden");
 
-                // jika pertama kali dibuka, kirim salam otomatis
                 if (!hasOpened) {
                     hasOpened = true;
                     setTimeout(() => {
                         chatMessages.innerHTML += `
-                    <div class="text-left bg-gray-100 rounded-md px-2 py-1">
-                        🤖 Halo! Ada yang bisa saya bantu?
-                    </div>
-                `;
+                            <div class="text-left bg-gray-100 rounded-md px-2 py-1">
+                                🤖 Halo! Ada yang bisa saya bantu?
+                            </div>
+                        `;
                         chatMessages.scrollTop = chatMessages.scrollHeight;
                     }, 300);
                 }
@@ -570,16 +689,13 @@
                 chatToggle.classList.remove("hidden");
             });
 
-            // === fungsi kirim pesan ===
             async function sendMessage() {
                 const question = input.value.trim();
                 if (!question) return;
 
-                chatMessages.innerHTML +=
-                    `<div class="text-right text-blue-600">🧑‍💻 ${question}</div>`;
+                chatMessages.innerHTML += `<div class="text-right text-blue-600">🧑‍💻 ${question}</div>`;
                 input.value = '';
-                chatMessages.innerHTML +=
-                    `<div id="loading" class="text-gray-400 italic">Mengetik...</div>`;
+                chatMessages.innerHTML += `<div id="loading" class="text-gray-400 italic">Mengetik...</div>`;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
 
                 try {
@@ -590,24 +706,22 @@
                             "X-CSRF-TOKEN": "{{ csrf_token() }}",
                             "Accept": "application/json"
                         },
-                        body: JSON.stringify({
-                            question
-                        })
+                        body: JSON.stringify({ question })
                     });
 
                     const data = await res.json();
                     document.getElementById("loading").remove();
 
                     chatMessages.innerHTML += `
-                <div class="text-left bg-gray-100 rounded-md px-2 py-1">
-                    🤖 ${data.answer}
-                </div>
-            `;
+                        <div class="text-left bg-gray-100 rounded-md px-2 py-1">
+                            🤖 ${data.answer}
+                        </div>
+                    `;
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 } catch (e) {
-                    document.getElementById("loading").remove();
-                    chatMessages.innerHTML +=
-                        `<div class="text-red-500">❌ Terjadi kesalahan server.</div>`;
+                    const loading = document.getElementById("loading");
+                    if (loading) loading.remove();
+                    chatMessages.innerHTML += `<div class="text-red-500">❌ Terjadi kesalahan server.</div>`;
                 }
             }
 
@@ -618,9 +732,6 @@
         });
     </script>
 
-
-
-    {{-- Toast --}}
     @if (session('success'))
         <script>
             Swal.fire({
@@ -637,6 +748,29 @@
 
     <script>
         const apiUrl = "{{ route('tickets.api') }}";
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '-';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function buildCode(ticket) {
+            return `${(ticket.category || '').charAt(0).toUpperCase()}${ticket.klasifikasi ? ticket.klasifikasi.charAt(0).toUpperCase() : ''}${String(ticket.id).padStart(3, '0')}`;
+        }
+
+        window.showTicketDetail = function(ticket) {
+            const data = document.body._x_dataStack ? document.body._x_dataStack[0] : null;
+            if (!data) return;
+
+            data.detailTicket = ticket;
+            data.showDetailModal = true;
+        };
+
         setInterval(() => {
             document.getElementById('clock').innerText = new Date().toLocaleString('id-ID', {
                 weekday: 'long',
@@ -651,63 +785,137 @@
         async function refreshData() {
             const res = await fetch(apiUrl);
             const data = await res.json();
+
             const sPanel = document.getElementById('panelSoftware');
             const hPanel = document.getElementById('panelHardware');
+            const nPanel = document.getElementById('panelNetworkMultimedia');
             const tbody = document.getElementById('ticketBody');
 
             const software = data.filter(t => t.category === 'software' && t.status === 'open').slice(0, 3);
             const hardware = data.filter(t => t.category === 'hardware' && t.status === 'open').slice(0, 2);
+            const networkMultimedia = data.filter(t => t.category === 'network&multimedia' && t.status === 'open').slice(0, 2);
 
             sPanel.innerHTML = software.map(t => `
-                <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md">
-                 <div class="text-3xl font-extrabold mb-1">
-    #${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
-</div>
-
-                    <div class="text-base font-semibold truncate">${t.title}</div>
-                    <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
-                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
-                </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
+                <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md panel-card"
+                    onclick='showTicketDetail({
+                        code: ${JSON.stringify(buildCode(t))},
+                        nama: ${JSON.stringify(t.nama ?? '-')},
+                        title: ${JSON.stringify(t.title ?? '-')},
+                        cabang: ${JSON.stringify(t.cabang ?? '-')},
+                        category: ${JSON.stringify(t.category ?? '-')},
+                        klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
+                        priority: ${JSON.stringify(t.priority ?? '-')},
+                        status: ${JSON.stringify(t.status ?? '-')},
+                        description: ${JSON.stringify(t.description ?? '-')},
+                        takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
+                        createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
+                    })'>
+                    <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
+                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
+                    <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                </div>
+            `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
             hPanel.innerHTML = hardware.map(t => `
-                <div class="bg-green-500 rounded-xl p-4 text-center shadow-md">
-                    <div class="text-3xl font-extrabold mb-1">#${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
-</div>
-                    <div class="text-base font-semibold truncate">${t.title}</div>
-                    <div class="text-sm">Cabang: <span class="font-bold">${t.cabang}</span></div>
-                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${t.status}</span></div>
-                </div>`).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
+                <div class="bg-green-500 rounded-xl p-4 text-center shadow-md panel-card"
+                    onclick='showTicketDetail({
+                        code: ${JSON.stringify(buildCode(t))},
+                        nama: ${JSON.stringify(t.nama ?? '-')},
+                        title: ${JSON.stringify(t.title ?? '-')},
+                        cabang: ${JSON.stringify(t.cabang ?? '-')},
+                        category: ${JSON.stringify(t.category ?? '-')},
+                        klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
+                        priority: ${JSON.stringify(t.priority ?? '-')},
+                        status: ${JSON.stringify(t.status ?? '-')},
+                        description: ${JSON.stringify(t.description ?? '-')},
+                        takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
+                        createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
+                    })'>
+                    <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
+                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
+                    <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                </div>
+            `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
+
+            nPanel.innerHTML = networkMultimedia.map(t => `
+                <div class="bg-purple-500 rounded-xl p-4 text-center shadow-md panel-card"
+                    onclick='showTicketDetail({
+                        code: ${JSON.stringify(buildCode(t))},
+                        nama: ${JSON.stringify(t.nama ?? '-')},
+                        title: ${JSON.stringify(t.title ?? '-')},
+                        cabang: ${JSON.stringify(t.cabang ?? '-')},
+                        category: ${JSON.stringify(t.category ?? '-')},
+                        klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
+                        priority: ${JSON.stringify(t.priority ?? '-')},
+                        status: ${JSON.stringify(t.status ?? '-')},
+                        description: ${JSON.stringify(t.description ?? '-')},
+                        takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
+                        createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
+                    })'>
+                    <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
+                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
+                    <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                </div>
+            `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
             tbody.innerHTML = data.map(t => `
                 <tr class="border-b hover:bg-blue-50 transition">
-                    <td class="p-2 font-semibold text-blue-700">${t.category[0].toUpperCase()}${t.klasifikasi ? t.klasifikasi[0].toUpperCase() : ''}${String(t.id).padStart(3,'0')}
-</td>
-                    <td class="p-2">${t.nama ?? '-'}</td>
-                    <td class="p-2">${t.title}</td>
-                    <td class="p-2">${t.cabang}</td>
-                    <td class="p-2 capitalize">${t.category}</td>
-                    <td class="p-2 capitalize">${t.klasifikasi ?? '-'}</td>
-                 <td class="p-2">
-    <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
-        t.priority === 'Low' ? 'bg-green-600' :
-        t.priority === 'Medium' ? 'bg-yellow-500' :
-        t.priority === 'Critical' ? 'bg-red-600' :
-        'bg-gray-400'
-    }">
-        ${t.priority ?? '-'}
-    </span>
-</td>
+                    <td class="p-2 font-semibold text-blue-700">${escapeHtml(buildCode(t))}</td>
+                    <td class="p-2">${escapeHtml(t.nama ?? '-')}</td>
+                    <td class="p-2">${escapeHtml(t.title ?? '-')}</td>
+                    <td class="p-2">
+                        <button type="button"
+                            class="ticket-clickable text-left"
+                            onclick='showTicketDetail({
+                                code: ${JSON.stringify(buildCode(t))},
+                                nama: ${JSON.stringify(t.nama ?? '-')},
+                                title: ${JSON.stringify(t.title ?? '-')},
+                                cabang: ${JSON.stringify(t.cabang ?? '-')},
+                                category: ${JSON.stringify(t.category ?? '-')},
+                                klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
+                                priority: ${JSON.stringify(t.priority ?? '-')},
+                                status: ${JSON.stringify(t.status ?? '-')},
+                                description: ${JSON.stringify(t.description ?? '-')},
+                                takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
+                                createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
+                            })'>
+                            ${escapeHtml((t.description ?? '-').length > 40 ? (t.description ?? '-').substring(0, 40) + '...' : (t.description ?? '-'))}
+                        </button>
+                    </td>
+                    <td class="p-2">${escapeHtml(t.cabang ?? '-')}</td>
+                    <td class="p-2 capitalize">${escapeHtml(t.category ?? '-')}</td>
+                    <td class="p-2 capitalize">${escapeHtml(t.klasifikasi ?? '-')}</td>
                     <td class="p-2">
                         <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
-                            t.status==='open'?'bg-yellow-500':t.status==='in_progress'?'bg-blue-500':t.status==='resolved'?'bg-green-600':'bg-gray-400'
-                        }">${t.status}</span>
+                            t.priority === 'Low' ? 'bg-green-600' :
+                            t.priority === 'Medium' ? 'bg-yellow-500' :
+                            t.priority === 'Critical' ? 'bg-red-600' :
+                            'bg-gray-400'
+                        }">
+                            ${escapeHtml(t.priority ?? '-')}
+                        </span>
                     </td>
-                    <td class="p-2">${t.taken_by_name ?? '-'}</td>
-                    <td class="p-2">${new Date(t.created_at).toLocaleString('id-ID')}</td>
-                </tr>`).join('');
+                    <td class="p-2">
+                        <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
+                            t.status === 'open' ? 'bg-yellow-500' :
+                            t.status === 'in_progress' ? 'bg-blue-500' :
+                            t.status === 'resolved' ? 'bg-green-600' :
+                            'bg-gray-400'
+                        }">
+                            ${escapeHtml(t.status ?? '-')}
+                        </span>
+                    </td>
+                    <td class="p-2">${escapeHtml(t.taken_by_name ?? '-')}</td>
+                    <td class="p-2">${t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-'}</td>
+                </tr>
+            `).join('');
         }
+
         refreshData();
-        setInterval(refreshData, 10000);
+        setInterval(refreshData, 120000);
 
         $(document).ready(() => $('#ticketTable').DataTable({
             pageLength: 10,
