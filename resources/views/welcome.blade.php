@@ -85,7 +85,7 @@
 
 <body class="font-sans"
     x-data="{
-        showModal: false,
+        showModal: {{ auth()->check() && request('open_ticket') ? 'true' : 'false' }},
         showDetailModal: false,
         detailTicket: {
             code: '',
@@ -118,10 +118,73 @@
             </div>
 
             <div class="flex items-center space-x-3 w-full md:w-auto justify-between">
-                <button @click="showModal = true"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm md:text-base">
-                    + Buat Ticket
-                </button>
+                <div class="flex items-center gap-2 flex-wrap">
+                    @auth
+                        @if (auth()->user()->role === 'it')
+                            <button @click="showModal = true"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm md:text-base">
+                                + Buat Ticket
+                            </button>
+
+                            
+
+                            <a href="{{ route('dashboard') }}"
+                                class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+                                Dashboard IT
+                            </a>
+                        @else
+                            <button @click="showModal = true"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm md:text-base">
+                                + Buat Ticket
+                            </button>
+                        @endif
+
+
+    <a href="{{ route('tickets.my') }}"
+    class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+    Ticket Saya
+</a>
+
+                        <div class="flex items-center gap-3 ml-2">
+                            <div class="text-right">
+                                <div class="text-sm font-semibold text-gray-700">
+                                    {{ auth()->user()->name }}
+                                </div>
+                                <div class="text-xs text-gray-500 capitalize">
+                                    {{ auth()->user()->role }}
+                                </div>
+                            </div>
+
+                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            </div>
+
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <a href="{{ route('login.user', ['redirect' => url('/?open_ticket=1')]) }}"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold shadow text-sm md:text-base inline-block">
+                            + Buat Ticket
+                        </a>
+
+                        <a href="{{ route('login.user') }}"
+                            class="bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-semibold text-sm">
+                            Login User
+                        </a>
+
+                        <a href="{{ route('login.it') }}"
+                            class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+                            Login IT
+                        </a>
+                    @endauth
+                </div>
+
                 <div class="text-right text-xs md:text-sm text-gray-500" id="clock"></div>
             </div>
         </div>
@@ -371,6 +434,7 @@
     </footer>
 
     {{-- Modal Form Tambah Ticket --}}
+    @auth
     <div x-show="showModal" x-transition
         class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-full max-w-3xl p-8 relative mx-3 overflow-y-auto max-h-[90vh]">
@@ -390,13 +454,17 @@
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Nama</label>
                         <input name="nama" type="text"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            value="{{ auth()->user()->name }}"
+                            readonly
+                            class="w-full bg-gray-100 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
                         <label class="block text-gray-700 font-medium mb-1">Email</label>
                         <input name="email" type="email"
-                            class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            value="{{ auth()->user()->email }}"
+                            readonly
+                            class="w-full bg-gray-100 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div class="md:col-span-2">
@@ -493,6 +561,7 @@
             </form>
         </div>
     </div>
+    @endauth
 
     {{-- Modal Detail Ticket --}}
     <div x-show="showDetailModal" x-transition
@@ -587,74 +656,75 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.querySelector('form[action="{{ route('tickets.store') }}"]');
-            const requiredFields = [
-                { name: 'nama', label: 'Nama' },
-                { name: 'email', label: 'Email' },
-                { name: 'cabang', label: 'Cabang' },
-                { name: 'category', label: 'Kategori' },
-                { name: 'klasifikasi', label: 'Klasifikasi' },
-                { name: 'priority', label: 'Priority' },
-                { name: 'title', label: 'Judul Ticket' },
-                { name: 'description', label: 'Deskripsi Masalah' },
-            ];
 
-            const fileInput = document.getElementById('attachments');
+            if (form) {
+                const requiredFields = [
+                    { name: 'cabang', label: 'Cabang' },
+                    { name: 'category', label: 'Kategori' },
+                    { name: 'klasifikasi', label: 'Klasifikasi' },
+                    { name: 'priority', label: 'Priority' },
+                    { name: 'title', label: 'Judul Ticket' },
+                    { name: 'description', label: 'Deskripsi Masalah' },
+                ];
 
-            form.addEventListener('submit', function(e) {
-                for (const field of requiredFields) {
-                    const input = form.querySelector(`[name="${field.name}"]`);
-                    if (!input || input.value.trim() === '') {
+                const fileInput = document.getElementById('attachments');
+
+                form.addEventListener('submit', function(e) {
+                    for (const field of requiredFields) {
+                        const input = form.querySelector(`[name="${field.name}"]`);
+                        if (!input || input.value.trim() === '') {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Form belum lengkap!',
+                                text: `Field "${field.label}" wajib diisi.`,
+                                confirmButtonColor: '#3b82f6'
+                            });
+                            input.focus();
+                            return false;
+                        }
+                    }
+
+                    const files = fileInput.files;
+                    if (files.length > 3) {
                         e.preventDefault();
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Form belum lengkap!',
-                            text: `Field "${field.label}" wajib diisi.`,
+                            title: 'Terlalu banyak file!',
+                            text: 'Maksimal hanya boleh mengunggah 3 file.',
                             confirmButtonColor: '#3b82f6'
                         });
-                        input.focus();
-                        return false;
-                    }
-                }
-
-                const files = fileInput.files;
-                if (files.length > 3) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Terlalu banyak file!',
-                        text: 'Maksimal hanya boleh mengunggah 3 file.',
-                        confirmButtonColor: '#3b82f6'
-                    });
-                    return false;
-                }
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-
-                    if (!allowedTypes.includes(file.type)) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Format file tidak diizinkan!',
-                            text: `File ${file.name} bukan PDF/JPG/PNG.`,
-                            confirmButtonColor: '#ef4444'
-                        });
                         return false;
                     }
 
-                    if (file.size > 2 * 1024 * 1024) {
-                        e.preventDefault();
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Ukuran file terlalu besar!',
-                            text: `File ${file.name} melebihi 2MB.`,
-                            confirmButtonColor: '#ef4444'
-                        });
-                        return false;
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+                        if (!allowedTypes.includes(file.type)) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Format file tidak diizinkan!',
+                                text: `File ${file.name} bukan PDF/JPG/PNG.`,
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return false;
+                        }
+
+                        if (file.size > 2 * 1024 * 1024) {
+                            e.preventDefault();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Ukuran file terlalu besar!',
+                                text: `File ${file.name} melebihi 2MB.`,
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return false;
+                        }
                     }
-                }
-            });
+                });
+            }
         });
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -746,6 +816,20 @@
         </script>
     @endif
 
+    @if (session('error'))
+        <script>
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: "{{ session('error') }}",
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+        </script>
+    @endif
+
     <script>
         const apiUrl = "{{ route('tickets.api') }}";
 
@@ -772,14 +856,17 @@
         };
 
         setInterval(() => {
-            document.getElementById('clock').innerText = new Date().toLocaleString('id-ID', {
-                weekday: 'long',
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            const clock = document.getElementById('clock');
+            if (clock) {
+                clock.innerText = new Date().toLocaleString('id-ID', {
+                    weekday: 'long',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
         }, 1000);
 
         async function refreshData() {

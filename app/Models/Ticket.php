@@ -23,6 +23,11 @@ class Ticket extends Model
         'finished_at',
         'priority',
         'klasifikasi',
+        'user_id',
+        'rating',
+        'feedback_comment',
+        'feedback_at',
+        'is_confirmed_resolved',
     ];
 
     public function takenByUser()
@@ -35,6 +40,9 @@ class Ticket extends Model
         'finished_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'feedback_at' => 'datetime',
+        'taken_at' => 'datetime',
+    'resolved_at' => 'datetime',
     ];
 
     public function attachments()
