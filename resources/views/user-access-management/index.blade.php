@@ -38,27 +38,39 @@
                     <p class="text-sm text-slate-500">Monitoring akses user internal per sistem</p>
                 </div>
 
-                <a href="{{ route('user-access-management.create') }}"
-                   class="inline-flex items-center justify-center rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 font-semibold shadow transition">
-                    + Tambah User Access
-                </a>
+                <div class="flex flex-wrap gap-3">
+                    <a href="{{ route('user-access-management.export.excel', request()->query()) }}"
+                       class="inline-flex items-center justify-center rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 font-semibold shadow transition">
+                        Export Excel
+                    </a>
+
+                    <a href="{{ route('user-access-management.export.pdf', request()->query()) }}"
+                       class="inline-flex items-center justify-center rounded-xl bg-rose-500 hover:bg-rose-600 text-white px-5 py-3 font-semibold shadow transition">
+                        Export PDF
+                    </a>
+
+                    <a href="{{ route('user-access-management.create') }}"
+                       class="inline-flex items-center justify-center rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-5 py-3 font-semibold shadow transition">
+                        + Tambah User Access
+                    </a>
+                </div>
             </div>
 
             {{-- FILTER --}}
             <div class="bg-white p-5 rounded-2xl shadow mb-6">
                 <form method="GET" action="{{ route('user-access-management.index') }}"
-                      class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-5">
                         <input type="text"
-                               name="search"
-                               value="{{ $search }}"
-                               placeholder="Cari nama, email, divisi, cabang..."
-                               class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+                            name="search"
+                            value="{{ $search }}"
+                            placeholder="Cari nama, email, divisi, cabang..."
+                            class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
                     </div>
 
                     <div class="md:col-span-3">
                         <select name="status"
-                                class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+                            class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
                             <option value="">Semua Status</option>
                             <option value="active" {{ $status == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ $status == 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -68,7 +80,7 @@
 
                     <div class="md:col-span-3">
                         <select name="kategori_system"
-                                class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
+                            class="w-full rounded-xl border-slate-300 focus:ring-2 focus:ring-orange-400 focus:border-orange-400">
                             <option value="">Semua Sistem</option>
                             @foreach (['SYOP','SERVER','ACCURATE','JPAYROLL','HELPDESK','CRS'] as $item)
                                 <option value="{{ $item }}" {{ $system == $item ? 'selected' : '' }}>
@@ -80,7 +92,7 @@
 
                     <div class="md:col-span-1">
                         <button type="submit"
-                                class="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 font-semibold">
+                            class="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 font-semibold">
                             Cari
                         </button>
                     </div>
@@ -91,12 +103,19 @@
             <div class="bg-white rounded-2xl shadow p-4 mb-6">
                 <div class="flex flex-wrap gap-2">
                     @foreach ($systemTabs as $key => $label)
+                        @php
+                            $count = $key === '' ? $allCount : ($systemCounts[$key] ?? 0);
+                        @endphp
                         <a href="{{ route('user-access-management.index', array_merge(request()->except('page'), ['kategori_system' => $key])) }}"
-                           class="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold transition
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition
                            {{ $system === $key
                                 ? 'bg-orange-500 text-white shadow'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                            {{ $label }}
+                            <span>{{ $label }}</span>
+                            <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs
+                                {{ $system === $key ? 'bg-white/20 text-white' : 'bg-white text-slate-700' }}">
+                                {{ $count }}
+                            </span>
                         </a>
                     @endforeach
                 </div>
@@ -108,6 +127,7 @@
                     <table class="min-w-full text-sm">
                         <thead class="bg-slate-50">
                             <tr>
+                                <th class="px-4 py-4 text-left font-bold text-slate-700 w-16">No</th>
                                 <th class="px-4 py-4 text-left font-bold text-slate-700">User</th>
                                 <th class="px-4 py-4 text-left font-bold text-slate-700">Role</th>
                                 <th class="px-4 py-4 text-left font-bold text-slate-700">Divisi</th>
@@ -124,6 +144,10 @@
                                 <tr class="border-b hover:bg-slate-50 transition
                                     {{ $row->status === 'resign' ? 'bg-rose-50/60' : '' }}
                                     {{ $row->status === 'inactive' ? 'bg-amber-50/50' : '' }}">
+                                    <td class="px-4 py-4 text-slate-700 font-semibold">
+                                        {{ $rows->firstItem() + $loop->index }}
+                                    </td>
+
                                     <td class="px-4 py-4">
                                         <div class="font-semibold text-slate-800 uppercase">{{ $row->nama_user }}</div>
                                         <div class="text-xs text-slate-400">{{ $row->email }}</div>
@@ -160,8 +184,6 @@
 
                                     <td class="px-4 py-4">
                                         <div class="flex items-center justify-center gap-3">
-
-                                            {{-- DETAIL --}}
                                             <a href="{{ route('user-access-management.show', $row->id) }}"
                                                title="Detail"
                                                class="group inline-flex items-center justify-center w-11 h-11 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-100 transition">
@@ -178,7 +200,6 @@
                                                 </svg>
                                             </a>
 
-                                            {{-- EDIT --}}
                                             <a href="{{ route('user-access-management.edit', $row->id) }}"
                                                title="Edit"
                                                class="group inline-flex items-center justify-center w-11 h-11 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-100 transition">
@@ -193,7 +214,6 @@
                                                 </svg>
                                             </a>
 
-                                            {{-- DELETE --}}
                                             <form method="POST"
                                                   action="{{ route('user-access-management.destroy', $row->id) }}"
                                                   onsubmit="return confirm('Hapus data?')">
@@ -214,13 +234,12 @@
                                                     </svg>
                                                 </button>
                                             </form>
-
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-8 text-slate-400">
+                                    <td colspan="9" class="text-center py-8 text-slate-400">
                                         Tidak ada data
                                     </td>
                                 </tr>

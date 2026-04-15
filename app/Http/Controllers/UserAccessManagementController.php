@@ -7,6 +7,8 @@ use App\Models\UserAccessMenu;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UserAccessManagementController extends Controller
 {
@@ -15,9 +17,9 @@ class UserAccessManagementController extends Controller
         $search = trim($request->get('search', ''));
         $status = $request->get('status', '');
         $system = $request->get('kategori_system', '');
-
-        $query = UserAccessManagement::with('menus')->latest();
-
+    
+        $query = UserAccessManagement::query()->latest();
+    
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('nama_user', 'like', "%{$search}%")
@@ -28,18 +30,33 @@ class UserAccessManagementController extends Controller
                     ->orWhere('penanggung_jawab', 'like', "%{$search}%");
             });
         }
-
+    
         if ($status !== '') {
             $query->where('status', $status);
         }
-
+    
         if ($system !== '') {
             $query->where('kategori_system', $system);
         }
-
+    
         $rows = $query->paginate(10)->withQueryString();
-
-        return view('user-access-management.index', compact('rows', 'search', 'status', 'system'));
+    
+        // count tab sistem
+        $systemCounts = UserAccessManagement::selectRaw('kategori_system, COUNT(*) as total')
+            ->groupBy('kategori_system')
+            ->pluck('total', 'kategori_system')
+            ->toArray();
+    
+        $allCount = UserAccessManagement::count();
+    
+        return view('user-access-management.index', compact(
+            'rows',
+            'search',
+            'status',
+            'system',
+            'systemCounts',
+            'allCount'
+        ));
     }
 
     public function create()
@@ -265,5 +282,110 @@ public function update(Request $request, $id)
             ->withInput()
             ->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
     }
+}
+
+protected function filteredQuery(Request $request)
+{
+    $search = trim($request->get('search', ''));
+    $status = $request->get('status', '');
+    $system = $request->get('kategori_system', '');
+
+    $query = UserAccessManagement::query()->latest();
+
+    if ($search !== '') {
+        $query->where(function ($q) use ($search) {
+            $q->where('nama_user', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('role', 'like', "%{$search}%")
+                ->orWhere('divisi', 'like', "%{$search}%")
+                ->orWhere('cabang', 'like', "%{$search}%")
+                ->orWhere('penanggung_jawab', 'like', "%{$search}%");
+        });
+    }
+
+    if ($status !== '') {
+        $query->where('status', $status);
+    }
+
+    if ($system !== '') {
+        $query->where('kategori_system', $system);
+    }
+
+    return $query;
+}
+
+public function exportExcel(Request $request): StreamedResponse
+{
+    $rows = $this->filteredQuery($request)->get();
+
+    $filename = 'user_access_management_' . now()->format('Ymd_His') . '.csv';
+
+    return response()->streamDownload(function () use ($rows) {
+        $handle = fopen('php://output', 'w');
+
+        fputcsv($handle, [
+            'No',
+            'Nama User',
+            'Email',
+            'Role',
+            'Divisi',
+            'Cabang',
+            'Penanggung Jawab',
+            'Status',
+            'Tanggal Resign',
+            'Critical',
+            'Sistem',
+            'Approval CEO',
+            'Approval At',
+            'Workflow Status',
+            'Disabled By',
+            'Disabled At',
+            'Created By',
+            'Updated By',
+            'Keterangan',
+        ]);
+
+        foreach ($rows as $i => $row) {
+            fputcsv($handle, [
+                $i + 1,
+                $row->nama_user,
+                $row->email,
+                $row->role,
+                $row->divisi,
+                $row->cabang,
+                $row->penanggung_jawab,
+                $row->status,
+                $row->tgl_resign,
+                $row->is_critical ? 'Y' : 'N',
+                $row->kategori_system,
+                $row->approval_ceo ? 'Y' : 'N',
+                optional($row->approval_at)->format('Y-m-d H:i:s'),
+                $row->workflow_status,
+                $row->disabled_by,
+                optional($row->disabled_at)->format('Y-m-d H:i:s'),
+                $row->created_by,
+                $row->updated_by,
+                $row->keterangan,
+            ]);
+        }
+
+        fclose($handle);
+    }, $filename, [
+        'Content-Type' => 'text/csv',
+    ]);
+}
+
+public function exportPdf(Request $request)
+{
+    $rows = $this->filteredQuery($request)
+        ->with('menus')
+        ->get();
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'user-access-management.export-pdf',
+        compact('rows')
+    )->setPaper('a4', 'landscape');
+
+    return $pdf->download('user_access_management_' . now()->format('Ymd_His') . '.pdf');
 }
 }

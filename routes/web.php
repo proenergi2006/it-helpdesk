@@ -131,6 +131,12 @@ Route::middleware(['auth', 'role:it'])->group(function () {
 
         Route::get('/reports/feedback', [ReportController::class, 'feedbackReport'])->name('reports.feedback');
         Route::get('/reports/sla', [ReportController::class, 'slaReport'])->name('reports.sla');
+
+        Route::get('/user-access-management/export/excel', [UserAccessManagementController::class, 'exportExcel'])
+    ->name('user-access-management.export.excel');
+
+Route::get('/user-access-management/export/pdf', [UserAccessManagementController::class, 'exportPdf'])
+    ->name('user-access-management.export.pdf');
 });
 
 require __DIR__ . '/auth.php';
