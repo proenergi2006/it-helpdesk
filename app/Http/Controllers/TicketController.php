@@ -533,4 +533,59 @@ class TicketController extends Controller
             ->route('tickets.my.detail', $ticket->id)
             ->with('success', 'Feedback berhasil dikirim.');
     }
+
+
+    public function editMyTicket($id)
+{
+    $ticket = Ticket::where('user_id', auth()->id())
+        ->where('status', 'open')
+        ->findOrFail($id);
+
+    return view('tickets.edit-my-ticket', compact('ticket'));
+}
+
+public function updateMyTicket(Request $request, $id)
+{
+    $ticket = Ticket::where('user_id', auth()->id())
+        ->where('status', 'open')
+        ->findOrFail($id);
+
+    $validated = $request->validate([
+        'cabang'      => 'required|string|max:50',
+        'title'       => 'required|string|max:255',
+        'category'    => 'required|in:software,hardware,network&multimedia',
+        'priority'    => 'required|in:Low,Medium,Critical',
+        'klasifikasi' => 'required|in:Incident,Request',
+        'description' => 'required|string',
+    ]);
+
+    // update SLA kalau priority berubah
+    $slaResponseMinutes = 240;
+    $slaResolutionMinutes = 1440;
+
+    if ($validated['priority'] === 'Medium') {
+        $slaResponseMinutes = 120;
+        $slaResolutionMinutes = 480;
+    }
+
+    if ($validated['priority'] === 'Critical') {
+        $slaResponseMinutes = 30;
+        $slaResolutionMinutes = 240;
+    }
+
+    $ticket->update([
+        'cabang'                 => $validated['cabang'],
+        'title'                  => $validated['title'],
+        'category'               => $validated['category'],
+        'priority'               => $validated['priority'],
+        'klasifikasi'            => $validated['klasifikasi'],
+        'description'            => $validated['description'],
+        'sla_response_minutes'   => $slaResponseMinutes,
+        'sla_resolution_minutes' => $slaResolutionMinutes,
+    ]);
+
+    return redirect()
+        ->route('tickets.my')
+        ->with('success', 'Ticket berhasil diperbarui.');
+}
 }

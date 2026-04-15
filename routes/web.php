@@ -89,6 +89,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-tickets', [TicketController::class, 'myTickets'])->name('tickets.my');
     Route::get('/my-tickets/{id}', [TicketController::class, 'myTicketDetail'])->name('tickets.my.detail');
     Route::post('/my-tickets/{id}/feedback', [TicketController::class, 'submitFeedback'])->name('tickets.my.feedback');
+
+    Route::get('/my-tickets/{id}/edit', [TicketController::class, 'editMyTicket'])->name('tickets.my.edit');
+Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->name('tickets.my.update');
     Route::get('/dashboard', [TicketController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

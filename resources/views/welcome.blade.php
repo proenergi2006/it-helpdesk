@@ -175,13 +175,13 @@
 
                         <a href="{{ route('login.user') }}"
                             class="bg-white border border-blue-200 hover:bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-semibold text-sm">
-                            Login User
+                            Login
                         </a>
 
-                        <a href="{{ route('login.it') }}"
+                        {{-- <a href="{{ route('login.it') }}"
                             class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-semibold text-sm">
                             Login IT
-                        </a>
+                        </a> --}}
                     @endauth
                 </div>
 

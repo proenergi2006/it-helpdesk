@@ -271,10 +271,19 @@
                                         {{ $ticket->created_at->format('d/m/Y H:i') }}
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <a href="{{ route('tickets.my.detail', $ticket->id) }}"
-                                            class="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-semibold text-sm transition shadow-sm">
-                                            Detail
-                                        </a>
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{{ route('tickets.my.detail', $ticket->id) }}"
+                                                class="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 font-semibold text-sm transition shadow-sm">
+                                                Detail
+                                            </a>
+                                    
+                                            @if ($ticket->status === 'open')
+                                                <a href="{{ route('tickets.my.edit', $ticket->id) }}"
+                                                    class="inline-flex items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 font-semibold text-sm transition shadow-sm">
+                                                    Edit
+                                                </a>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
