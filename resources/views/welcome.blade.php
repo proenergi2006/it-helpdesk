@@ -102,7 +102,18 @@
         }
     }">
 
-    <div class="max-w-7xl mx-auto py-6 px-3 sm:px-6">
+@php
+    $statusIcons = [
+        'open'             => ['bg' => 'bg-yellow-500', 'path' => 'M12 6v6l4 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+        'in_progress'      => ['bg' => 'bg-blue-500',   'path' => 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99'],
+        'resolved'         => ['bg' => 'bg-green-600',  'path' => 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+        'pending_approval' => ['bg' => 'bg-orange-400', 'path' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z'],
+        'rejected'         => ['bg' => 'bg-red-700',    'path' => 'M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+        'cancel'           => ['bg' => 'bg-gray-500',   'path' => 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636'],
+        'hold'             => ['bg' => 'bg-purple-600', 'path' => 'M14.25 9v6m-4.5 0V9M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+    ];
+@endphp
+    <div class="w-full py-6 px-3 sm:px-6">
 
         {{-- Header --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
@@ -222,7 +233,7 @@
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
-                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
                     @empty
                         <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
@@ -261,7 +272,7 @@
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
-                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
                     @empty
                         <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
@@ -300,7 +311,7 @@
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
                             <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
-                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status }}</span></div>
+                            <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
                     @empty
                         <div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>
@@ -373,15 +384,16 @@
                                     </span>
                                 </td>
                                 <td class="p-2">
-                                    <span class="px-3 py-1 rounded-full text-white text-xs font-semibold
-                                        {{ $ticket->status === 'open'
-                                            ? 'bg-yellow-500'
-                                            : ($ticket->status === 'in_progress'
-                                                ? 'bg-blue-500'
-                                                : ($ticket->status === 'resolved'
-                                                    ? 'bg-green-600'
-                                                    : 'bg-gray-400')) }}">
-                                        {{ ucfirst($ticket->status) }}
+                                    @php $icon = $statusIcons[$ticket->status] ?? $statusIcons['hold']; @endphp
+                                    <span class="group relative inline-flex" title="{{ $ticket->status_label }}">
+                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white {{ $icon['bg'] }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-5 w-5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon['path'] }}" />
+                                            </svg>
+                                        </span>
+                                        <span class="pointer-events-none absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow transition-opacity group-hover:opacity-100">
+                                            {{ $ticket->status_label }}
+                                        </span>
                                     </span>
                                 </td>
                                 <td class="p-2">{{ $ticket->takenByUser?->name ?? '-' }}</td>
@@ -805,6 +817,23 @@
     <script>
         const apiUrl = "{{ route('tickets.api') }}";
 
+        const STATUS_ICONS = @js($statusIcons);
+        const STATUS_LABELS = { pending_approval: 'Menunggu Approval', rejected: 'Ditolak', open: 'Open', in_progress: 'In progress', resolved: 'Resolved', cancel: 'Cancel' };
+
+        function statusIconHtml(status) {
+            const icon = STATUS_ICONS[status] ?? STATUS_ICONS.hold;
+            const label = escapeHtml(STATUS_LABELS[status] ?? status ?? '-');
+            return `
+                <span class="group relative inline-flex" title="${label}">
+                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white ${icon.bg}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-5 w-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="${icon.path}" />
+                        </svg>
+                    </span>
+                    <span class="pointer-events-none absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow transition-opacity group-hover:opacity-100">${label}</span>
+                </span>`;
+        }
+
         function escapeHtml(text) {
             if (text === null || text === undefined) return '-';
             return String(text)
@@ -872,7 +901,7 @@
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
                     <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
-                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
             `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
@@ -894,7 +923,7 @@
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
                     <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
-                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
             `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
@@ -916,7 +945,7 @@
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
                     <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
-                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(t.status ?? '-')}</span></div>
+                    <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
             `).join('') || `<div class="text-gray-200 text-center text-xl py-6">Belum ada ticket</div>`;
 
@@ -932,22 +961,12 @@
                         <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
                             t.priority === 'Low' ? 'bg-green-600' :
                             t.priority === 'Medium' ? 'bg-yellow-500' :
-                            t.priority === 'Critical' ? 'bg-red-600' :
-                            'bg-gray-400'
+                            'bg-red-600'
                         }">
                             ${escapeHtml(t.priority ?? '-')}
                         </span>
                     </td>
-                    <td class="p-2">
-                        <span class="px-3 py-1 rounded-full text-white text-xs font-semibold ${
-                            t.status === 'open' ? 'bg-yellow-500' :
-                            t.status === 'in_progress' ? 'bg-blue-500' :
-                            t.status === 'resolved' ? 'bg-green-600' :
-                            'bg-gray-400'
-                        }">
-                            ${escapeHtml(t.status ?? '-')}
-                        </span>
-                    </td>
+                    <td class="p-2">${statusIconHtml(t.status)}</td>
                     <td class="p-2">${escapeHtml(t.taken_by_name ?? '-')}</td>
                     <td class="p-2">${t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-'}</td>
                 </tr>

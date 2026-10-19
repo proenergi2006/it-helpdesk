@@ -20,7 +20,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
+        <div class="w-full px-4 sm:px-6 lg:px-8 space-y-4">
 
             <div class="bg-white rounded-xl shadow p-6">
                 <div class="text-sm font-medium text-gray-700 mb-2">Attendees</div>

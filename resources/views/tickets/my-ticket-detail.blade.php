@@ -61,6 +61,8 @@
             'open' => 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
             'in_progress' => 'bg-sky-100 text-sky-700 ring-1 ring-sky-200',
             'resolved' => 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
+            'pending_approval' => 'bg-orange-100 text-orange-700 ring-1 ring-orange-200',
+            'rejected' => 'bg-rose-100 text-rose-700 ring-1 ring-rose-200',
             default => 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
         };
 
@@ -90,7 +92,7 @@
     <div class="min-h-screen">
         {{-- Header --}}
         <div class="bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400 shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+            <div class="w-full px-4 sm:px-6 py-6">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
                     <div class="flex items-center gap-4">
                         <div class="h-14 w-14 rounded-2xl bg-white/90 backdrop-blur flex items-center justify-center shadow">
@@ -121,7 +123,7 @@
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div class="w-full px-4 sm:px-6 py-8">
 
             {{-- Alert --}}
             @if (session('success'))
@@ -157,7 +159,7 @@
                                 Priority: {{ $ticket->priority }}
                             </span>
                             <span class="inline-flex items-center rounded-full px-4 py-2 text-sm font-bold capitalize {{ $statusClass }}">
-                                {{ str_replace('_', ' ', $ticket->status) }}
+                                {{ $ticket->status_label }}
                             </span>
                         </div>
                     </div>
@@ -445,7 +447,7 @@
                                 <div class="text-xs text-slate-500">Status Saat Ini</div>
                                 <div class="mt-2">
                                     <span class="inline-flex items-center rounded-full px-4 py-2 text-sm font-bold capitalize {{ $statusClass }}">
-                                        {{ str_replace('_', ' ', $ticket->status) }}
+                                        {{ $ticket->status_label }}
                                     </span>
                                 </div>
                             </div>

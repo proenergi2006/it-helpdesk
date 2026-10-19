@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="max-w-6xl mx-auto py-6 px-4">
+    <div class="w-full px-4 py-6">
         <h1 class="text-2xl font-bold text-blue-700 mb-4">🎧 Dashboard Tim IT</h1>
         <p class="text-gray-600 mb-6">Selamat datang, {{ Auth::user()->name }} — role: {{ Auth::user()->role }}</p>
 

@@ -101,6 +101,9 @@ Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->nam
 
 // Khusus IT
 Route::middleware(['auth', 'role:it'])->group(function () {
+    Route::get('/approvals', [TicketController::class, 'approvals'])->name('approvals.index');
+    Route::post('/approvals/{id}/approve', [TicketController::class, 'approve'])->name('approvals.approve');
+    Route::post('/approvals/{id}/reject', [TicketController::class, 'reject'])->name('approvals.reject');
     Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus'])->name('tickets.updateStatus');
     Route::patch('/tickets/{id}/priority', [TicketController::class, 'updatePriority'])->name('tickets.updatePriority');
     Route::delete('/tickets/{id}', [TicketController::class, 'destroy'])->name('tickets.destroy');

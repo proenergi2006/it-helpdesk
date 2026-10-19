@@ -28,7 +28,19 @@ class Ticket extends Model
         'feedback_comment',
         'feedback_at',
         'is_confirmed_resolved',
+        'approved_by',
+        'approved_at',
+        'approval_note',
     ];
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'pending_approval' => 'Menunggu Approval',
+            'rejected' => 'Ditolak',
+            default => ucfirst(str_replace('_', ' ', (string) $this->status)),
+        };
+    }
 
     public function takenByUser()
     {
@@ -41,6 +53,7 @@ class Ticket extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'feedback_at' => 'datetime',
+        'approved_at' => 'datetime',
         'taken_at' => 'datetime',
     'resolved_at' => 'datetime',
     ];

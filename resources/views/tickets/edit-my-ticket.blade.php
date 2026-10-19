@@ -11,7 +11,7 @@
 
     <div class="min-h-screen">
         <div class="bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400 shadow-lg">
-            <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+            <div class="w-full px-4 sm:px-6 py-6">
                 <div class="flex items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
                         <div class="h-14 w-14 rounded-2xl bg-white/90 flex items-center justify-center shadow">
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <div class="w-full px-4 sm:px-6 py-8">
             @if ($errors->any())
                 <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-rose-700">
                     <div class="font-semibold mb-2">Ada data yang belum sesuai:</div>

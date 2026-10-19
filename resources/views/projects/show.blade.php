@@ -59,7 +59,7 @@
     </x-slot>
     
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
+        <div class="w-full px-4 sm:px-6 lg:px-8 space-y-4">
 
             @if(session('success'))
                 <div class="p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">

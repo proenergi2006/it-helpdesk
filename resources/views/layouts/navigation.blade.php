@@ -3,7 +3,7 @@
     <div class="pointer-events-none absolute inset-x-0 -top-10 h-24 bg-gradient-to-r from-cyan-500/20 via-transparent to-fuchsia-500/20 blur-2xl"></div>
 
     <div class="bg-slate-950/80 backdrop-blur ring-1 ring-white/10 border-b border-white/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
 
                 <!-- Left -->
@@ -27,191 +27,71 @@
                     </div>
 
                     <!-- Navigation Links (Desktop) -->
-                    <div class="hidden sm:flex items-center gap-2">
+                    <div class="hidden sm:flex items-center gap-1">
+                        <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Dashboard</a>
 
-                        {{-- Dashboard --}}
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')"
-                            class="!border-0 !text-slate-300 hover:!text-white">
-                            <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 ring-1 ring-transparent hover:ring-white/10 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-cyan-300/90">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M3 3v1.5M21 3v1.5M4.5 21h15M4.5 21V9a3 3 0 013-3h9a3 3 0 013 3v12M4.5 21h15" />
-                                </svg>
-                                <span>{{ __('Dashboard') }}</span>
-                            </span>
-                        </x-nav-link>
+                        @if (Auth::check() && in_array(strtolower(Auth::user()->email), array_map('strtolower', config('helpdesk.approvers'))))
+                            @php $pendingApprovals = \App\Models\Ticket::where('status', 'pending_approval')->count(); @endphp
+                            <a href="{{ route('approvals.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('approvals.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"><span class="inline-flex items-center">Approval @if ($pendingApprovals > 0)<span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold leading-5 text-white">{{ $pendingApprovals }}</span>@endif</span></a>
+                        @endif
 
-                        {{-- Trend --}}
-                        <x-nav-link :href="route('trend')" :active="request()->routeIs('trend')"
-                            class="!border-0 !text-slate-300 hover:!text-white">
-                            <span class="inline-flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-white/5 ring-1 ring-transparent hover:ring-fuchsia-400/30 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-5 h-5 text-fuchsia-300/90"
-                                     fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M3 17l6-6 4 4 8-8M21 21H3" />
-                                </svg>
-                                <span class="font-medium tracking-tight">Trend</span>
-                            </span>
-                        </x-nav-link>
+                        <a href="{{ route('trend') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('trend') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Trend</a>
 
-                        {{-- Report Dropdown --}}
                         <div x-data="{ openReport: false }" class="relative">
-                            <button
-                                type="button"
-                                @click="openReport = !openReport"
-                                @click.outside="openReport = false"
-                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl
-                                       !border-0 !text-slate-300 hover:!text-white
-                                       hover:bg-white/5 ring-1 ring-transparent hover:ring-cyan-400/30 transition"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="w-5 h-5 text-cyan-300/90"
-                                     fill="none" viewBox="0 0 24 24"
-                                     stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M3 3v18h18" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M9 17V9m4 8V5m4 12v-7" />
-                                </svg>
-
-                                <span class="font-medium tracking-tight">Report</span>
-
-                                <svg class="w-4 h-4 text-slate-400 transition"
-                                     :class="openReport ? 'rotate-180' : ''"
+                            <button type="button" @click="openReport = !openReport" @click.outside="openReport = false"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('reports.*') || request()->routeIs('user-access-management.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                                <span>Report</span>
+                                <svg class="w-4 h-4 text-slate-400 transition" :class="openReport ? 'rotate-180' : ''"
                                      xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 9.75l-7.5 7.5-7.5-7.5" />
                                 </svg>
                             </button>
-
-                            <div
-                                x-cloak
-                                x-show="openReport"
-                                x-transition
-                                class="absolute left-0 mt-2 w-60 rounded-xl
-                                       bg-slate-950/90 backdrop-blur
-                                       ring-1 ring-white/10 shadow-lg overflow-hidden z-50"
-                            >
+                            <div x-cloak x-show="openReport" x-transition
+                                class="absolute left-0 mt-2 w-52 rounded-lg bg-slate-950 ring-1 ring-white/10 shadow-lg overflow-hidden z-50">
                                 <a href="{{ route('reports.index') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    <span class="text-cyan-300">📊</span>
-                                    <span>Report Ticket</span>
-                                </a>
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Report Ticket</a>
                                 <a href="{{ route('reports.feedback') }}"
-   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-    <span class="text-cyan-300">⭐</span>
-    <span>Report Feedback</span>
-</a>
-
-<a href="{{ route('reports.sla') }}"
-   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-    <span class="text-cyan-300">⏱</span>
-    <span>SLA Report</span>
-</a>
-
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Report Feedback</a>
+                                <a href="{{ route('reports.sla') }}"
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">SLA Report</a>
                                 <a href="{{ route('user-access-management.index') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    <span class="text-cyan-300">👤</span>
-                                    <span>User Management</span>
-                                </a>
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">User Management</a>
                             </div>
                         </div>
 
-                        {{-- Projects Dropdown --}}
                         <div x-data="{ openProjects: false }" class="relative">
-                            <button
-                                type="button"
-                                @click="openProjects = !openProjects"
-                                @click.outside="openProjects = false"
-                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl
-                                       !border-0 !text-slate-300 hover:!text-white
-                                       hover:bg-white/5 ring-1 ring-transparent hover:ring-cyan-400/30 transition"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-300/90"
-                                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M7.5 14.25v2.25A2.25 2.25 0 009.75 18.75h4.5A2.25 2.25 0 0016.5 16.5v-2.25M7.5 9.75V7.5A2.25 2.25 0 019.75 5.25h4.5A2.25 2.25 0 0116.5 7.5v2.25M9 12h6"/>
-                                </svg>
-
-                                <span class="font-medium tracking-tight">Projects</span>
-
-                                <svg class="w-4 h-4 text-slate-400 transition"
-                                     :class="openProjects ? 'rotate-180' : ''"
-                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 9.75l-7.5 7.5-7.5-7.5"/>
-                                </svg>
-                            </button>
-
-                            <div
-                                x-cloak
-                                x-show="openProjects"
-                                x-transition
-                                class="absolute left-0 mt-2 w-56 rounded-xl
-                                       bg-slate-950/90 backdrop-blur
-                                       ring-1 ring-white/10 shadow-lg overflow-hidden z-50"
-                            >
-                                <a href="{{ route('projects.index') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    📁 <span>Project List</span>
-                                </a>
-
-                                <a href="{{ route('projects.board') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    📋 <span>Kanban Board</span>
-                                </a>
-                            </div>
-                        </div>
-
-                        {{-- Knowledge Dropdown --}}
-                        <div x-data="{ openDocs: false }" class="relative">
-                            <button
-                                type="button"
-                                @click="openDocs = !openDocs"
-                                @click.outside="openDocs = false"
-                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl
-                                       !border-0 !text-slate-300 hover:!text-white
-                                       hover:bg-white/5 ring-1 ring-transparent hover:ring-white/10 transition"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-cyan-300/90"
-                                     fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M19.5 14.25V6.75A2.25 2.25 0 0017.25 4.5H8.25A2.25 2.25 0 006 6.75v10.5A2.25 2.25 0 008.25 19.5h3.75" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M15 2.25v4.5a2.25 2.25 0 002.25 2.25h4.5" />
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                          d="M16.5 19.5l3-3m0 0l-3-3m3 3H12" />
-                                </svg>
-
-                                <span class="font-medium tracking-tight">Knowledge</span>
-
-                                <svg class="w-4 h-4 text-slate-400 transition"
-                                     :class="openDocs ? 'rotate-180' : ''"
+                            <button type="button" @click="openProjects = !openProjects" @click.outside="openProjects = false"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('projects.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                                <span>Projects</span>
+                                <svg class="w-4 h-4 text-slate-400 transition" :class="openProjects ? 'rotate-180' : ''"
                                      xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 9.75l-7.5 7.5-7.5-7.5" />
                                 </svg>
                             </button>
+                            <div x-cloak x-show="openProjects" x-transition
+                                class="absolute left-0 mt-2 w-52 rounded-lg bg-slate-950 ring-1 ring-white/10 shadow-lg overflow-hidden z-50">
+                                <a href="{{ route('projects.index') }}"
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Project List</a>
+                                <a href="{{ route('projects.board') }}"
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Kanban Board</a>
+                            </div>
+                        </div>
 
-                            <div
-                                x-cloak
-                                x-show="openDocs"
-                                x-transition
-                                class="absolute left-0 mt-2 w-56 rounded-xl
-                                       bg-slate-950/90 backdrop-blur
-                                       ring-1 ring-white/10 shadow-lg overflow-hidden z-50"
-                            >
+                        <div x-data="{ openDocs: false }" class="relative">
+                            <button type="button" @click="openDocs = !openDocs" @click.outside="openDocs = false"
+                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('documents.*') || request()->routeIs('meetings.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                                <span>Knowledge</span>
+                                <svg class="w-4 h-4 text-slate-400 transition" :class="openDocs ? 'rotate-180' : ''"
+                                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 9.75l-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                            <div x-cloak x-show="openDocs" x-transition
+                                class="absolute left-0 mt-2 w-52 rounded-lg bg-slate-950 ring-1 ring-white/10 shadow-lg overflow-hidden z-50">
                                 <a href="{{ route('documents.index') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    <span class="text-cyan-300">📚</span>
-                                    <span>Dokumentasi</span>
-                                </a>
-
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Dokumentasi</a>
                                 <a href="{{ route('meetings.index') }}"
-                                   class="flex items-center gap-2 px-4 py-3 text-sm text-slate-200 hover:bg-white/5">
-                                    <span class="text-cyan-300">📝</span>
-                                    <span>Meeting MoM</span>
-                                </a>
+                                   class="block px-4 py-2.5 text-sm text-slate-200 hover:bg-white/5">Meeting MoM</a>
                             </div>
                         </div>
 
@@ -312,6 +192,14 @@
                     Dashboard
                 </a>
 
+                @if (Auth::check() && in_array(strtolower(Auth::user()->email), array_map('strtolower', config('helpdesk.approvers'))))
+                            @php $pendingApprovals = \App\Models\Ticket::where('status', 'pending_approval')->count(); @endphp
+                    <a href="{{ route('approvals.index') }}"
+                       class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
+                        <span class="inline-flex items-center">Approval @if ($pendingApprovals > 0)<span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold leading-5 text-white">{{ $pendingApprovals }}</span>@endif</span>
+                    </a>
+                @endif
+
                 <a href="{{ route('trend') }}"
                    class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
                     Trend
@@ -325,7 +213,6 @@
                         class="w-full flex items-center justify-between px-4 py-3 text-slate-200"
                     >
                         <span class="flex items-center gap-2">
-                            <span>📊</span>
                             <span>Report</span>
                         </span>
 
@@ -339,12 +226,22 @@
                     <div x-show="openMobileReport" x-transition class="px-3 pb-3 space-y-2">
                         <a href="{{ route('reports.index') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            📊 Report Ticket
+                            Report Ticket
+                        </a>
+
+                        <a href="{{ route('reports.feedback') }}"
+                           class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
+                            Report Feedback
+                        </a>
+
+                        <a href="{{ route('reports.sla') }}"
+                           class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
+                            SLA Report
                         </a>
 
                         <a href="{{ route('user-access-management.index') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            👤 User Management
+                            User Management
                         </a>
                     </div>
                 </div>
@@ -357,7 +254,6 @@
                         class="w-full flex items-center justify-between px-4 py-3 text-slate-200"
                     >
                         <span class="flex items-center gap-2">
-                            <span>📁</span>
                             <span>Projects</span>
                         </span>
 
@@ -371,12 +267,12 @@
                     <div x-show="openMobileProjects" x-transition class="px-3 pb-3 space-y-2">
                         <a href="{{ route('projects.index') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            📁 Project List
+                            Project List
                         </a>
 
                         <a href="{{ route('projects.board') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            📋 Kanban Board
+                            Kanban Board
                         </a>
                     </div>
                 </div>
@@ -389,7 +285,6 @@
                         class="w-full flex items-center justify-between px-4 py-3 text-slate-200"
                     >
                         <span class="flex items-center gap-2">
-                            <span>📚</span>
                             <span>Knowledge</span>
                         </span>
 
@@ -403,12 +298,12 @@
                     <div x-show="openMobileKnowledge" x-transition class="px-3 pb-3 space-y-2">
                         <a href="{{ route('documents.index') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            📚 Dokumentasi
+                            Dokumentasi
                         </a>
 
                         <a href="{{ route('meetings.index') }}"
                            class="block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200 ring-1 ring-white/10 hover:bg-white/10 transition">
-                            📝 Meeting MoM
+                            Meeting MoM
                         </a>
                     </div>
                 </div>

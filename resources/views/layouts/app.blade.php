@@ -24,7 +24,7 @@
         <!-- Page Heading -->
         @isset($header)
             <header class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <div class="w-full px-4 py-6 sm:px-6 lg:px-8">
                     {{ $header }}
                 </div>
             </header>
@@ -41,7 +41,7 @@
     {{-- Footer --}}
     <footer class="mt-10">
         <div class="border-t border-white/10 bg-slate-950/70 backdrop-blur">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="w-full px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
                     <div class="flex items-center gap-3">

@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="w-full px-3 sm:px-4 space-y-6">
 
             {{-- Statistik --}}
             <div class="grid grid-cols-12 gap-4">
@@ -52,6 +52,8 @@
                     <option value="Hold - Third Party">Hold - Third Party</option>
                     <option value="Hold - Waiting User Response">Hold - Waiting User</option>
                     <option value="Hold - Teknisi">Hold - Teknisi</option>
+                    <option value="pending_approval">Menunggu Approval</option>
+                    <option value="rejected">Ditolak</option>
                 </select>
             </div>
 
@@ -87,6 +89,7 @@
                                 <th class="p-2 text-left">Priority</th>
                                 <th class="p-2 text-left">Status</th>
                                 <th class="p-2 text-left">Dikerjakan Oleh</th>
+                                <th class="p-2 text-left">Dibuat</th>
                                 <th class="p-2 text-left">Mulai</th>
                                 <th class="p-2 text-left">Selesai</th>
                                 <th class="p-2 text-left">Durasi</th>
@@ -105,9 +108,21 @@
                                             ($diff->s ? $diff->s . ' detik' : '');
                                     }
 
+                                    $statusIcons = [
+                                        'open'             => 'M12 6v6l4 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                                        'in_progress'      => 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99',
+                                        'resolved'         => 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                                        'pending_approval' => 'M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z',
+                                        'rejected'         => 'M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                                        'cancel'           => 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636',
+                                        'hold'             => 'M14.25 9v6m-4.5 0V9M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+                                    ];
+
                                     $statusColor = match ($ticket->status) {
                                         'open' => 'bg-yellow-500',
                                         'cancel' => 'bg-red-500',
+                                        'pending_approval' => 'bg-orange-400',
+                                        'rejected' => 'bg-red-700',
                                         'in_progress' => 'bg-blue-500',
                                         'resolved' => 'bg-green-600',
                                         'Hold - Third Party' => 'bg-purple-600',
@@ -155,8 +170,18 @@
 
                                     {{-- STATUS --}}
                                     <td class="p-2">
-                                        <span class="status-badge {{ $statusColor }}">
-                                            {{ $ticket->status }}
+                                        @php $icon = $statusIcons[$ticket->status] ?? $statusIcons['hold']; @endphp
+                                        <span class="group relative inline-flex" title="{{ $ticket->status_label }}">
+                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white {{ $statusColor }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="h-5 w-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icon }}" />
+                                                </svg>
+                                            </span>
+                                            <span class="pointer-events-none absolute left-full top-1/2 z-30 ml-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white opacity-0 shadow transition-opacity group-hover:opacity-100">
+                                                {{ $ticket->status_label }}
+                                            </span>
+                                            {{-- teks tersembunyi untuk pencarian & filter tabel --}}
+                                            <span class="sr-only">{{ $ticket->status }} {{ $ticket->status_label }}</span>
                                         </span>
                                     </td>
 
@@ -172,29 +197,27 @@
                                             @endif
 
                                     </td>
+                                    <td class="p-2">{{ $ticket->created_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                     <td class="p-2">{{ $ticket->started_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                     <td class="p-2">{{ $ticket->finished_at?->format('d/m/Y H:i') ?? '-' }}</td>
                                     <td class="p-2">{{ $durasi }}</td>
 
                                     {{-- AKSI --}}
                                     <td class="p-2">
-                                        <div class="flex flex-col gap-2">
-                                            @if ($ticket->status !== 'resolved' && $ticket->status !== 'cancel')
-                                                <button type="button"
-                                                    class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full transfer-btn"
-                                                    data-id="{{ $ticket->id }}">
-                                                    🔄 Transfer
-                                                </button>
-                                            @else
-                                                <span class="text-gray-400 text-xs italic">-</span>
-                                            @endif
-                                        </div>
+                                      <div class="flex flex-col gap-1.5 w-36">
+                                        @if (!in_array($ticket->status, ['resolved', 'cancel', 'pending_approval', 'rejected']))
+                                            <button type="button"
+                                                class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold w-full transfer-btn"
+                                                data-id="{{ $ticket->id }}">
+                                                🔄 Transfer
+                                            </button>
+                                        @endif
 
                                         @if ($ticket->status === 'open')
                                             {{-- Tombol Ambil --}}
-                                            <div x-data="{ open: false }" class="relative inline-block text-left">
+                                            <div x-data="{ open: false }" class="relative w-full text-left">
                                                 <button @click="open = !open"
-                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
+                                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold w-full flex justify-between items-center">
                                                     ⚙️ Aksi
                                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none"
                                                         viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
@@ -205,7 +228,7 @@
                                                 </button>
 
                                                 <div x-show="open" @click.away="open = false"
-                                                    class="absolute z-20 mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg text-xs">
+                                                    class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg text-xs">
                                                     {{-- Tombol Ambil --}}
                                                     <form action="{{ route('tickets.updateStatus', $ticket->id) }}"
                                                         method="POST">
@@ -226,10 +249,10 @@
                                                 </div>
                                             </div>
                                         @elseif (in_array($ticket->status, ['in_progress', 'Hold - Third Party', 'Hold - Waiting User Response', 'Hold - Teknisi']))
-                                            <div class="flex flex-col gap-2">
+                                            <div class="flex flex-col gap-1.5">
                                                 {{-- Tombol Selesai pakai SweetAlert --}}
                                                 <button type="button"
-                                                    class="btn-finish bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full"
+                                                    class="btn-finish bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold w-full"
                                                     data-id="{{ $ticket->id }}">
                                                     ✅ Selesai
                                                 </button>
@@ -237,7 +260,7 @@
                                                 {{-- Dropdown Hold --}}
                                                 <div x-data="{ open: false }" class="relative">
                                                     <button type="button" @click="open = !open"
-                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md text-xs font-semibold w-full flex justify-between items-center">
+                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold w-full flex justify-between items-center">
                                                         ⏸️ Tahan Tiket
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none"
                                                             viewBox="0 0 24 24" stroke-width="2"
@@ -290,9 +313,16 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        @elseif ($ticket->status === 'pending_approval')
+                                            <span class="text-orange-500 text-xs italic text-center">⏳ Menunggu approval</span>
+                                        @elseif ($ticket->status === 'rejected')
+                                            <span class="text-red-600 text-xs italic text-center">❌ Ditolak</span>
+                                        @elseif ($ticket->status === 'cancel')
+                                            <span class="text-gray-400 text-xs italic text-center">-</span>
                                         @else
-                                            <span class="text-gray-400 text-xs italic">✅ Done</span>
+                                            <span class="text-gray-400 text-xs italic text-center">✅ Done</span>
                                         @endif
+                                      </div>
                                     </td>
                                 </tr>
                             @endforeach

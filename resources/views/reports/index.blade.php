@@ -37,7 +37,7 @@
 
 
     <div class="py-8 bg-gray-50 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="bg-white p-6 rounded-xl shadow-lg">
 
                 {{-- 🔍 FILTER SECTION --}}
@@ -119,11 +119,7 @@
                                     <td class="p-3">{{ $t->cabang }}</td>
                                     <td class="p-3 capitalize">{{ $t->category }}</td>
                                     <td class="p-3">
-                                        <span
-                                            class="px-3 py-1 rounded-full text-white text-xs font-semibold
-                                            {{ $t->status === 'open' ? 'bg-yellow-500' : ($t->status === 'in_progress' ? 'bg-blue-500' : 'bg-green-600') }}">
-                                            {{ ucfirst($t->status) }}
-                                        </span>
+                                        <x-status-icon :status="$t->status" :label="$t->status_label" />
                                     </td>
                                     <td class="p-3">
                                         {{ $t->takenByUser?->name ?? '-' }}

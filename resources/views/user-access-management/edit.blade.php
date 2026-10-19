@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-8 bg-slate-100 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
 
             @if (session('error'))
                 <div class="mb-4 rounded-xl border border-rose-200 bg-rose-100 text-rose-700 px-4 py-3">

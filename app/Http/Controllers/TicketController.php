@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TicketCreatedUser;
 use App\Mail\TicketCreatedTeam;
+use App\Mail\TicketApprovalRequest;
+use App\Mail\TicketApprovalResultUser;
 use App\Mail\TicketResolvedUser;
 
 class TicketController extends Controller
@@ -97,7 +99,7 @@ class TicketController extends Controller
             'priority'               => $validated['priority'],
             'klasifikasi'            => $validated['klasifikasi'],
             'description'            => $validated['description'],
-            'status'                 => 'open',
+            'status'                 => 'pending_approval',
             'cc_emails'              => $request->cc_emails,
             'sla_response_minutes'   => $slaResponseMinutes,
             'sla_resolution_minutes' => $slaResolutionMinutes,
@@ -132,6 +134,43 @@ class TicketController extends Controller
             ->cc($ccList)
             ->send(new TicketCreatedUser($ticket));
 
+        Mail::to(config('helpdesk.approvers'))->send(new TicketApprovalRequest($ticket));
+
+        return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim dan menunggu approval Lead IT.');
+    }
+
+
+    private function ensureApprover(): void
+    {
+        abort_unless(
+            in_array(strtolower(Auth::user()->email), array_map('strtolower', config('helpdesk.approvers'))),
+            403,
+            'Anda bukan approver ticket.'
+        );
+    }
+
+    public function approvals()
+    {
+        $this->ensureApprover();
+
+        $tickets = Ticket::where('status', 'pending_approval')->orderBy('created_at')->get();
+
+        return view('tickets.approvals', compact('tickets'));
+    }
+
+    public function approve($id)
+    {
+        $this->ensureApprover();
+
+        $ticket = Ticket::where('status', 'pending_approval')->findOrFail($id);
+        $ticket->update([
+            'status'      => 'open',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+
+        Mail::to($ticket->email)->send(new TicketApprovalResultUser($ticket));
+
         Mail::to([
             'iwan.hermawan@proenergi.co.id',
             'fadli.fathur@proenergi.co.id',
@@ -140,7 +179,27 @@ class TicketController extends Controller
             'ferry.indrawan@plazatoyota.co.id'
         ])->send(new TicketCreatedTeam($ticket));
 
-        return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim!');
+        return back()->with('success', "Ticket #{$ticket->id} disetujui.");
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $this->ensureApprover();
+
+        $data = $request->validate(['approval_note' => 'required|string|max:500']);
+
+        $ticket = Ticket::where('status', 'pending_approval')->findOrFail($id);
+        $ticket->update([
+            'status'        => 'rejected',
+            'approved_by'   => Auth::id(),
+            'approved_at'   => now(),
+            'approval_note' => $data['approval_note'],
+            'finished_at'   => now(),
+        ]);
+
+        Mail::to($ticket->email)->send(new TicketApprovalResultUser($ticket));
+
+        return back()->with('success', "Ticket #{$ticket->id} ditolak.");
     }
 
     public function detail($id)
@@ -326,10 +385,10 @@ class TicketController extends Controller
     {
         $ticket = Ticket::findOrFail($id);
 
-        if ($ticket->status !== 'open') {
+        if (!in_array($ticket->status, ['open', 'pending_approval'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tiket hanya bisa dibatalkan jika status masih OPEN.'
+                'message' => 'Tiket hanya bisa dibatalkan jika status masih OPEN atau menunggu approval.'
             ], 400);
         }
 

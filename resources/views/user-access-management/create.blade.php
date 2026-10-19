@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-8 bg-slate-100 min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
 
             {{-- ERROR DARI CONTROLLER CATCH --}}
             @if (session('error'))

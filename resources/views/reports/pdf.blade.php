@@ -115,7 +115,7 @@
                     <td>{{ $t->title ?: '-' }}</td>
                     <td>{{ $t->cabang }}</td>
                     <td>{{ ucfirst($t->category) }}</td>
-                    <td>{{ ucfirst($t->status) }}</td>
+                    <td>{{ $t->status_label }}</td>
                     <td>{{ $t->takenByUser?->name ?? '-' }}</td>
                     <td>{{ $durasi }}</td>
                     <td>{{ $t->created_at->format('d/m/Y H:i') }}</td>

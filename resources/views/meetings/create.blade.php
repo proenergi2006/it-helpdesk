@@ -7,7 +7,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="bg-white p-8 rounded-xl shadow">
                 <form method="POST" action="{{ route('meetings.store') }}" class="space-y-6">
                     @csrf

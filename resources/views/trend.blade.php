@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-10 min-h-screen bg-gradient-to-br from-blue-100 via-sky-50 to-blue-200">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-10">
+        <div class="w-full px-4 sm:px-6 lg:px-8 space-y-10">
 
             {{-- 🔹 Statistik Cards --}}
             <div class="grid grid-cols-12 gap-6">
