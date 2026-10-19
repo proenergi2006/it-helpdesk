@@ -299,9 +299,6 @@ class TicketController extends Controller
             ->map(function ($t) {
                 return [
                     'id'            => $t->id,
-                    'nama'          => $t->nama,
-                    'title'         => $t->title,
-                    'description'   => $t->description,
                     'cabang'        => $t->cabang,
                     'category'      => $t->category,
                     'status'        => $t->status,

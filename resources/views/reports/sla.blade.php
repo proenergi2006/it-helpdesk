@@ -114,13 +114,13 @@
                             @forelse ($tickets as $row)
                                 @php
                                     $responseSeconds =
-                                        $row->taken_at && $row->created_at
-                                            ? $row->created_at->diffInSeconds($row->taken_at)
+                                        $row->taken_at && $row->sla_start_at
+                                            ? $row->sla_start_at->diffInSeconds($row->taken_at)
                                             : null;
 
                                     $resolutionSeconds =
-                                        $row->resolved_at && $row->created_at
-                                            ? $row->created_at->diffInSeconds($row->resolved_at)
+                                        $row->resolved_at && $row->sla_start_at
+                                            ? $row->sla_start_at->diffInSeconds($row->resolved_at)
                                             : null;
 
                                     $responseOnTimeStatus =

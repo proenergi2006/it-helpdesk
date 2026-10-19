@@ -217,21 +217,17 @@
                             @click="
                                 detailTicket = {
                                     code: '{{ $code }}',
-                                    nama: @js($ticket->nama ?? '-'),
-                                    title: @js($ticket->title ?? '-'),
                                     cabang: @js($ticket->cabang ?? '-'),
                                     category: @js($ticket->category ?? '-'),
                                     klasifikasi: @js($ticket->klasifikasi ?? '-'),
                                     priority: @js($ticket->priority ?? '-'),
                                     status: @js($ticket->status ?? '-'),
-                                    description: @js($ticket->description ?? '-'),
                                     takenBy: @js($ticket->takenByUser?->name ?? '-'),
                                     createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
                                 };
                                 showDetailModal = true;
                             ">
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
-                            <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
                             <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
@@ -256,21 +252,17 @@
                             @click="
                                 detailTicket = {
                                     code: '{{ $code }}',
-                                    nama: @js($ticket->nama ?? '-'),
-                                    title: @js($ticket->title ?? '-'),
                                     cabang: @js($ticket->cabang ?? '-'),
                                     category: @js($ticket->category ?? '-'),
                                     klasifikasi: @js($ticket->klasifikasi ?? '-'),
                                     priority: @js($ticket->priority ?? '-'),
                                     status: @js($ticket->status ?? '-'),
-                                    description: @js($ticket->description ?? '-'),
                                     takenBy: @js($ticket->takenByUser?->name ?? '-'),
                                     createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
                                 };
                                 showDetailModal = true;
                             ">
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
-                            <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
                             <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
@@ -295,21 +287,17 @@
                             @click="
                                 detailTicket = {
                                     code: '{{ $code }}',
-                                    nama: @js($ticket->nama ?? '-'),
-                                    title: @js($ticket->title ?? '-'),
                                     cabang: @js($ticket->cabang ?? '-'),
                                     category: @js($ticket->category ?? '-'),
                                     klasifikasi: @js($ticket->klasifikasi ?? '-'),
                                     priority: @js($ticket->priority ?? '-'),
                                     status: @js($ticket->status ?? '-'),
-                                    description: @js($ticket->description ?? '-'),
                                     takenBy: @js($ticket->takenByUser?->name ?? '-'),
                                     createdAt: @js($ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-')
                                 };
                                 showDetailModal = true;
                             ">
                             <div class="text-3xl md:text-4xl font-extrabold mb-1">#{{ $code }}</div>
-                            <div class="text-base md:text-lg font-semibold truncate">{{ $ticket->title }}</div>
                             <div class="text-sm">Cabang: <span class="font-bold">{{ $ticket->cabang }}</span></div>
                             <div class="text-sm mt-1">Status: <span class="font-bold capitalize">{{ $ticket->status_label }}</span></div>
                         </div>
@@ -347,8 +335,6 @@
                     <thead class="bg-blue-100 text-blue-800">
                         <tr>
                             <th class="p-2 text-left">#</th>
-                            <th class="p-2 text-left">Nama</th>
-                            <th class="p-2 text-left">Judul Ticket</th>
                             <th class="p-2 text-left">Cabang</th>
                             <th class="p-2 text-left">Kategori</th>
                             <th class="p-2 text-left">Klasifikasi</th>
@@ -368,8 +354,6 @@
 
                             <tr class="border-b hover:bg-blue-50 transition">
                                 <td class="p-2 font-semibold text-blue-700">{{ $code }}</td>
-                                <td class="p-2">{{ $ticket->nama }}</td>
-                                <td class="p-2">{{ $ticket->title }}</td>
                                 <td class="p-2">{{ $ticket->cabang }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->category }}</td>
                                 <td class="p-2 capitalize">{{ $ticket->klasifikasi ?? '-' }}</td>
@@ -401,7 +385,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-6 text-gray-500">Belum ada ticket</td>
+                                <td colspan="8" class="text-center py-6 text-gray-500">Belum ada ticket</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -570,10 +554,6 @@
                     <p class="font-semibold text-gray-800" x-text="'#' + detailTicket.code"></p>
                 </div>
                 <div>
-                    <p class="text-gray-500">Nama</p>
-                    <p class="font-semibold text-gray-800" x-text="detailTicket.nama"></p>
-                </div>
-                <div>
                     <p class="text-gray-500">Cabang</p>
                     <p class="font-semibold text-gray-800" x-text="detailTicket.cabang"></p>
                 </div>
@@ -596,10 +576,6 @@
                 <div>
                     <p class="text-gray-500">Dikerjakan Oleh</p>
                     <p class="font-semibold text-gray-800" x-text="detailTicket.takenBy"></p>
-                </div>
-                <div class="md:col-span-2">
-                    <p class="text-gray-500">Judul Ticket</p>
-                    <p class="font-semibold text-gray-800" x-text="detailTicket.title"></p>
                 </div>
                 <div class="md:col-span-2">
                     <p class="text-gray-500">Waktu Dibuat</p>
@@ -887,19 +863,15 @@
                 <div class="bg-blue-500 rounded-xl p-4 text-center shadow-md panel-card"
                     onclick='showTicketDetail({
                         code: ${JSON.stringify(buildCode(t))},
-                        nama: ${JSON.stringify(t.nama ?? '-')},
-                        title: ${JSON.stringify(t.title ?? '-')},
                         cabang: ${JSON.stringify(t.cabang ?? '-')},
                         category: ${JSON.stringify(t.category ?? '-')},
                         klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
                         priority: ${JSON.stringify(t.priority ?? '-')},
                         status: ${JSON.stringify(t.status ?? '-')},
-                        description: ${JSON.stringify(t.description ?? '-')},
                         takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
                         createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
                     })'>
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
-                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
                     <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
@@ -909,19 +881,15 @@
                 <div class="bg-green-500 rounded-xl p-4 text-center shadow-md panel-card"
                     onclick='showTicketDetail({
                         code: ${JSON.stringify(buildCode(t))},
-                        nama: ${JSON.stringify(t.nama ?? '-')},
-                        title: ${JSON.stringify(t.title ?? '-')},
                         cabang: ${JSON.stringify(t.cabang ?? '-')},
                         category: ${JSON.stringify(t.category ?? '-')},
                         klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
                         priority: ${JSON.stringify(t.priority ?? '-')},
                         status: ${JSON.stringify(t.status ?? '-')},
-                        description: ${JSON.stringify(t.description ?? '-')},
                         takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
                         createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
                     })'>
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
-                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
                     <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
@@ -931,19 +899,15 @@
                 <div class="bg-purple-500 rounded-xl p-4 text-center shadow-md panel-card"
                     onclick='showTicketDetail({
                         code: ${JSON.stringify(buildCode(t))},
-                        nama: ${JSON.stringify(t.nama ?? '-')},
-                        title: ${JSON.stringify(t.title ?? '-')},
                         cabang: ${JSON.stringify(t.cabang ?? '-')},
                         category: ${JSON.stringify(t.category ?? '-')},
                         klasifikasi: ${JSON.stringify(t.klasifikasi ?? '-')},
                         priority: ${JSON.stringify(t.priority ?? '-')},
                         status: ${JSON.stringify(t.status ?? '-')},
-                        description: ${JSON.stringify(t.description ?? '-')},
                         takenBy: ${JSON.stringify(t.taken_by_name ?? '-')},
                         createdAt: ${JSON.stringify(t.created_at ? new Date(t.created_at).toLocaleString('id-ID') : '-')}
                     })'>
                     <div class="text-3xl font-extrabold mb-1">#${escapeHtml(buildCode(t))}</div>
-                    <div class="text-base font-semibold truncate">${escapeHtml(t.title ?? '-')}</div>
                     <div class="text-sm">Cabang: <span class="font-bold">${escapeHtml(t.cabang ?? '-')}</span></div>
                     <div class="text-sm mt-1">Status: <span class="font-bold capitalize">${escapeHtml(({pending_approval: 'Menunggu Approval', rejected: 'Ditolak'})[t.status] ?? t.status ?? '-')}</span></div>
                 </div>
@@ -952,8 +916,6 @@
             tbody.innerHTML = data.map(t => `
                 <tr class="border-b hover:bg-blue-50 transition">
                     <td class="p-2 font-semibold text-blue-700">${escapeHtml(buildCode(t))}</td>
-                    <td class="p-2">${escapeHtml(t.nama ?? '-')}</td>
-                    <td class="p-2">${escapeHtml(t.title ?? '-')}</td>
                     <td class="p-2">${escapeHtml(t.cabang ?? '-')}</td>
                     <td class="p-2 capitalize">${escapeHtml(t.category ?? '-')}</td>
                     <td class="p-2 capitalize">${escapeHtml(t.klasifikasi ?? '-')}</td>

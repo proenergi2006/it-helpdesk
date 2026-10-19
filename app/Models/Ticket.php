@@ -33,6 +33,12 @@ class Ticket extends Model
         'approval_note',
     ];
 
+    // Jam SLA mulai berjalan saat tiket disetujui; tiket lama (tanpa approval) dihitung sejak dibuat
+    public function getSlaStartAtAttribute()
+    {
+        return $this->approved_at ?? $this->created_at;
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {

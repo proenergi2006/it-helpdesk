@@ -188,7 +188,7 @@ class ReportController extends Controller
 
     foreach ($allTickets as $ticket) {
         if ($ticket->taken_at && $ticket->sla_response_minutes) {
-            $responseMinutes = $ticket->created_at->diffInMinutes($ticket->taken_at);
+            $responseMinutes = $ticket->sla_start_at->diffInMinutes($ticket->taken_at);
             if ($responseMinutes <= $ticket->sla_response_minutes) {
                 $responseOnTime++;
             } else {
@@ -197,7 +197,7 @@ class ReportController extends Controller
         }
 
         if ($ticket->resolved_at && $ticket->sla_resolution_minutes) {
-            $resolutionMinutes = $ticket->created_at->diffInMinutes($ticket->resolved_at);
+            $resolutionMinutes = $ticket->sla_start_at->diffInMinutes($ticket->resolved_at);
             if ($resolutionMinutes <= $ticket->sla_resolution_minutes) {
                 $resolutionOnTime++;
             } else {
