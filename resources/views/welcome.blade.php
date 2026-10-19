@@ -115,6 +115,26 @@
 @endphp
     <div class="w-full py-6 px-3 sm:px-6">
 
+        @if ($scanAsset)
+            <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+                <div class="text-sm text-green-900">
+                    <div class="font-semibold">{{ $scanAsset->code }} · {{ $scanAsset->name }}</div>
+                    <div class="text-green-800">Pemegang: {{ $scanAsset->holder_name ?? '-' }}</div>
+                </div>
+                @auth
+                    <button type="button" @click="showModal = true"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+                        Laporkan Masalah Perangkat Ini
+                    </button>
+                @else
+                    <a href="{{ route('assets.scan.ticket', $scanAsset->code) }}"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm text-center">
+                        Login untuk Laporkan Masalah
+                    </a>
+                @endauth
+            </div>
+        @endif
+
         {{-- Header --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
             <div class="flex items-center gap-3">
@@ -456,14 +476,14 @@
                         <select name="cabang"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Pilih Cabang</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Head Office')>Head Office</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Jakarta')>Jakarta</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Surabaya')>Surabaya</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Samarinda')>Samarinda</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Palembang')>Palembang</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Banjarmasin')>Banjarmasin</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Pontianak')>Pontianak</option>
-                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Sulawesi')>Sulawesi</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Head Office')>Head Office</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Jakarta')>Jakarta</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Surabaya')>Surabaya</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Samarinda')>Samarinda</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Palembang')>Palembang</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Banjarmasin')>Banjarmasin</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Pontianak')>Pontianak</option>
+                            <option @selected(($scanCabang ?? old('cabang')) === 'Sulawesi')>Sulawesi</option>
                         </select>
                     </div>
 
@@ -488,14 +508,9 @@
                             class="w-full border-gray-300 rounded-md uppercase focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="AST-0000">
                         @if ($scanAsset)
-                            <div class="mt-2 flex items-center gap-3">
-                                @if ($scanAsset->photo_url)
-                                    <img src="{{ $scanAsset->photo_url }}" alt="" class="h-14 w-14 rounded-lg object-cover border">
-                                @endif
-                                <p class="text-xs text-green-700">
-                                    Perangkat: {{ $scanAsset->name }}@if ($scanAsset->cabang) · {{ $scanAsset->cabang }}@endif
-                                </p>
-                            </div>
+                            <p class="mt-2 text-xs text-green-700">
+                                Perangkat: {{ $scanAsset->name }}@if ($scanAsset->holder_name) · Pemegang: {{ $scanAsset->holder_name }}@endif
+                            </p>
                         @endif
                     </div>
 

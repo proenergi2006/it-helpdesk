@@ -122,14 +122,26 @@ class AssetController extends Controller
         return view('assets.labels', compact('assets'));
     }
 
-    // Hasil scan QR: IT -> detail aset, user lain -> form tiket dengan aset terisi
+    // Hasil scan QR (publik): IT yang sudah login -> detail aset, selain itu -> halaman depan
+    // yang hanya menampilkan kode, nama, dan pemegang aset
     public function scan(string $code)
     {
         $asset = Asset::where('code', strtoupper($code))->firstOrFail();
 
-        if (Auth::user()->role === 'it') {
+        if (Auth::check() && Auth::user()->role === 'it') {
             return redirect()->route('assets.show', $asset);
         }
+
+        return redirect()->route('welcome', array_filter([
+            'asset'       => $asset->code,
+            'open_ticket' => Auth::check() ? 1 : null,
+        ]));
+    }
+
+    // Tombol "Buat Tiket" di halaman depan: wajib login, lalu form tiket terbuka dengan aset terisi
+    public function scanTicket(string $code)
+    {
+        $asset = Asset::where('code', strtoupper($code))->firstOrFail();
 
         return redirect()->route('welcome', ['open_ticket' => 1, 'asset' => $asset->code]);
     }

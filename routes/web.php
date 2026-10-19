@@ -105,8 +105,9 @@ Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->nam
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Hasil scan QR aset (semua user yang login)
-Route::middleware('auth')->get('/assets/scan/{code}', [\App\Http\Controllers\AssetController::class, 'scan'])->name('assets.scan');
+// Hasil scan QR aset: publik, hanya menampilkan kode, nama, dan pemegang aset
+Route::get('/assets/scan/{code}', [\App\Http\Controllers\AssetController::class, 'scan'])->name('assets.scan');
+Route::middleware('auth')->get('/assets/scan/{code}/ticket', [\App\Http\Controllers\AssetController::class, 'scanTicket'])->name('assets.scan.ticket');
 
 // Khusus IT
 Route::middleware(['auth', 'role:it'])->group(function () {

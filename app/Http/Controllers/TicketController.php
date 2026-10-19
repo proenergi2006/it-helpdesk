@@ -42,12 +42,15 @@ class TicketController extends Controller
             ->limit(2)
             ->get();
 
-        $scanAsset = (Auth::check() && request('asset'))
-            ? \App\Models\Asset::where('code', strtoupper(request('asset')))->first()
+        // hasil scan QR: untuk publik hanya kode, nama, dan pemegang yang ditampilkan
+        $scanAsset = request('asset')
+            ? \App\Models\Asset::with('user')->where('code', strtoupper(request('asset')))->first()
             : null;
+        $scanCabang = Auth::check() ? $scanAsset?->cabang : null;
 
         return view('welcome', compact(
             'scanAsset',
+            'scanCabang',
             'tickets',
             'softwareTickets',
             'hardwareTickets',
