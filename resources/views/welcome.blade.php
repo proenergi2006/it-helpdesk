@@ -456,14 +456,14 @@
                         <select name="cabang"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Pilih Cabang</option>
-                            <option>Head Office</option>
-                            <option>Jakarta</option>
-                            <option>Surabaya</option>
-                            <option>Samarinda</option>
-                            <option>Palembang</option>
-                            <option>Banjarmasin</option>
-                            <option>Pontianak</option>
-                            <option>Sulawesi</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Head Office')>Head Office</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Jakarta')>Jakarta</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Surabaya')>Surabaya</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Samarinda')>Samarinda</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Palembang')>Palembang</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Banjarmasin')>Banjarmasin</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Pontianak')>Pontianak</option>
+                            <option @selected(($scanAsset->cabang ?? old('cabang')) === 'Sulawesi')>Sulawesi</option>
                         </select>
                     </div>
 
@@ -473,9 +473,30 @@
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Pilih Kategori</option>
                             <option value="software">Software</option>
-                            <option value="hardware">Hardware</option>
+                            <option value="hardware" @selected($scanAsset || old('category') === 'hardware')>Hardware</option>
                             <option value="network&multimedia">Network & Multimedia</option>
                         </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-1">
+                            Kode Aset (Opsional)
+                            <span class="text-xs text-gray-500">(scan QR di perangkat atau ketik kode, contoh: AST-0012)</span>
+                        </label>
+                        <input name="asset_code" type="text" maxlength="30"
+                            value="{{ $scanAsset->code ?? old('asset_code') }}"
+                            class="w-full border-gray-300 rounded-md uppercase focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="AST-0000">
+                        @if ($scanAsset)
+                            <div class="mt-2 flex items-center gap-3">
+                                @if ($scanAsset->photo_url)
+                                    <img src="{{ $scanAsset->photo_url }}" alt="" class="h-14 w-14 rounded-lg object-cover border">
+                                @endif
+                                <p class="text-xs text-green-700">
+                                    Perangkat: {{ $scanAsset->name }}@if ($scanAsset->cabang) · {{ $scanAsset->cabang }}@endif
+                                </p>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="md:col-span-2">

@@ -28,6 +28,7 @@ class Ticket extends Model
         'feedback_comment',
         'feedback_at',
         'is_confirmed_resolved',
+        'asset_id',
         'approved_by',
         'approved_at',
         'approval_note',
@@ -46,6 +47,11 @@ class Ticket extends Model
             'rejected' => 'Ditolak',
             default => ucfirst(str_replace('_', ' ', (string) $this->status)),
         };
+    }
+
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
     }
 
     public function project()

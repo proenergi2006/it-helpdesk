@@ -35,6 +35,10 @@
                             <a href="{{ route('approvals.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('approvals.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"><span class="inline-flex items-center">Approval @if ($pendingApprovals > 0)<span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold leading-5 text-white">{{ $pendingApprovals }}</span>@endif</span></a>
                         @endif
 
+                        @if (Auth::check() && Auth::user()->role === 'it')
+                            <a href="{{ route('assets.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('assets.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Aset</a>
+                        @endif
+
                         <a href="{{ route('trend') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('trend') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Trend</a>
 
                         <div x-data="{ openReport: false }" class="relative">
@@ -197,6 +201,13 @@
                     <a href="{{ route('approvals.index') }}"
                        class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
                         <span class="inline-flex items-center">Approval @if ($pendingApprovals > 0)<span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold leading-5 text-white">{{ $pendingApprovals }}</span>@endif</span>
+                    </a>
+                @endif
+
+                @if (Auth::check() && Auth::user()->role === 'it')
+                    <a href="{{ route('assets.index') }}"
+                       class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
+                        Aset
                     </a>
                 @endif
 

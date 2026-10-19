@@ -178,6 +178,13 @@
                             </div>
                         </div>
 
+                        @if ($ticket->asset)
+                            <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                <div class="text-xs text-slate-500">Perangkat</div>
+                                <div class="font-bold text-slate-800 mt-1">{{ $ticket->asset->code }} · {{ $ticket->asset->name }}</div>
+                            </div>
+                        @endif
+
                         <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                             <div class="text-xs text-slate-500">Klasifikasi</div>
                             <div class="font-bold text-slate-800 mt-1">{{ $ticket->klasifikasi }}</div>

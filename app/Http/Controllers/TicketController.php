@@ -42,7 +42,12 @@ class TicketController extends Controller
             ->limit(2)
             ->get();
 
+        $scanAsset = (Auth::check() && request('asset'))
+            ? \App\Models\Asset::where('code', strtoupper(request('asset')))->first()
+            : null;
+
         return view('welcome', compact(
+            'scanAsset',
             'tickets',
             'softwareTickets',
             'hardwareTickets',
@@ -73,7 +78,20 @@ class TicketController extends Controller
             'klasifikasi'  => 'required|in:Incident,Request',
             'description'  => 'required|string',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'asset_code'   => 'nullable|string|max:30',
         ]);
+
+        // aset opsional: diisi dari scan QR atau diketik manual
+        $asset = null;
+        if (!empty($validated['asset_code'])) {
+            $asset = \App\Models\Asset::where('code', strtoupper(trim($validated['asset_code'])))->first();
+
+            if (!$asset) {
+                return redirect()->route('welcome', ['open_ticket' => 1])
+                    ->withInput()
+                    ->with('error', 'Kode aset "'.$validated['asset_code'].'" tidak ditemukan. Kosongkan jika tidak ada.');
+            }
+        }
 
         // SLA default berdasarkan priority
         $slaResponseMinutes = 240;
@@ -102,6 +120,7 @@ class TicketController extends Controller
             'priority'               => $validated['priority'],
             'klasifikasi'            => $validated['klasifikasi'],
             'description'            => $validated['description'],
+            'asset_id'               => $asset?->id,
             'status'                 => $needsApproval ? 'pending_approval' : 'open',
             'cc_emails'              => $request->cc_emails,
             'sla_response_minutes'   => $slaResponseMinutes,

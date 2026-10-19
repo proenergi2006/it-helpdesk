@@ -28,7 +28,7 @@
                             <tr class="border-b align-top">
                                 <td class="p-2 font-semibold text-blue-700">#{{ str_pad($t->id, 3, '0', STR_PAD_LEFT) }}</td>
                                 <td class="p-2">{{ $t->nama }}<br><span class="text-xs text-gray-500">{{ $t->cabang }}</span></td>
-                                <td class="p-2">{{ $t->title }}</td>
+                                <td class="p-2">{{ $t->title }}@if ($t->asset)<div class="text-xs text-gray-500 mt-0.5">Aset: {{ $t->asset->code }} · {{ $t->asset->name }}</div>@endif</td>
                                 <td class="p-2 whitespace-pre-line max-w-md">{{ $t->description }}</td>
                                 <td class="p-2 capitalize">{{ $t->category }}</td>
                                 <td class="p-2">{{ $t->priority }}</td>

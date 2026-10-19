@@ -105,8 +105,26 @@ Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->nam
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Hasil scan QR aset (semua user yang login)
+Route::middleware('auth')->get('/assets/scan/{code}', [\App\Http\Controllers\AssetController::class, 'scan'])->name('assets.scan');
+
 // Khusus IT
 Route::middleware(['auth', 'role:it'])->group(function () {
+    Route::get('/assets/labels', [\App\Http\Controllers\AssetController::class, 'labels'])->name('assets.labels');
+    Route::get('/assets/import', [\App\Http\Controllers\AssetController::class, 'importForm'])->name('assets.import');
+    Route::post('/assets/import', [\App\Http\Controllers\AssetController::class, 'import'])->name('assets.import.store');
+    Route::get('/assets/import/template', [\App\Http\Controllers\AssetController::class, 'importTemplate'])->name('assets.import.template');
+    Route::get('/assets/audits', [\App\Http\Controllers\AssetAuditController::class, 'index'])->name('assets.audits.index');
+    Route::post('/assets/audits', [\App\Http\Controllers\AssetAuditController::class, 'store'])->name('assets.audits.store');
+    Route::get('/assets/audits/{audit}', [\App\Http\Controllers\AssetAuditController::class, 'show'])->name('assets.audits.show');
+    Route::post('/assets/audits/{audit}/scan', [\App\Http\Controllers\AssetAuditController::class, 'scan'])->name('assets.audits.scan');
+    Route::post('/assets/audits/{audit}/verify/{asset}', [\App\Http\Controllers\AssetAuditController::class, 'verify'])->name('assets.audits.verify');
+    Route::post('/assets/audits/{audit}/close', [\App\Http\Controllers\AssetAuditController::class, 'close'])->name('assets.audits.close');
+    Route::get('/assets/reconcile', [\App\Http\Controllers\AssetController::class, 'reconcileForm'])->name('assets.reconcile');
+    Route::post('/assets/reconcile', [\App\Http\Controllers\AssetController::class, 'reconcile'])->name('assets.reconcile.run');
+    Route::post('/assets/{asset}/repairs', [\App\Http\Controllers\AssetController::class, 'storeRepair'])->name('assets.repairs.store');
+    Route::post('/assets/{asset}/mutations', [\App\Http\Controllers\AssetController::class, 'mutate'])->name('assets.mutations.store');
+    Route::resource('assets', \App\Http\Controllers\AssetController::class);
     Route::get('/approvals', [TicketController::class, 'approvals'])->name('approvals.index');
     Route::post('/approvals/{id}/approve', [TicketController::class, 'approve'])->name('approvals.approve');
     Route::post('/approvals/{id}/reject', [TicketController::class, 'reject'])->name('approvals.reject');

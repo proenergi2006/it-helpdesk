@@ -11,6 +11,9 @@
             <tr><td style="font-weight:bold;">Cabang</td><td>{{ $ticket->cabang }}</td></tr>
             <tr><td style="font-weight:bold;">Kategori</td><td>{{ ucfirst($ticket->category) }}</td></tr>
             <tr><td style="font-weight:bold;">Klasifikasi</td><td>{{ $ticket->klasifikasi }}</td></tr>
+            @if ($ticket->asset)
+            <tr><td style="font-weight:bold;">Aset</td><td>{{ $ticket->asset->code }} - {{ $ticket->asset->name }}</td></tr>
+            @endif
             <tr><td style="font-weight:bold;">Judul</td><td>{{ $ticket->title }}</td></tr>
             <tr><td style="font-weight:bold;">Deskripsi</td><td>{{ $ticket->description }}</td></tr>
         </table>

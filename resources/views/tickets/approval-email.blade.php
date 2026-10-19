@@ -18,6 +18,9 @@
             <dt class="font-medium text-gray-600">Kategori</dt><dd class="col-span-2 capitalize">{{ $ticket->category }}</dd>
             <dt class="font-medium text-gray-600">Klasifikasi</dt><dd class="col-span-2">{{ $ticket->klasifikasi }}</dd>
             <dt class="font-medium text-gray-600">Priority</dt><dd class="col-span-2">{{ $ticket->priority }}</dd>
+            @if ($ticket->asset)
+                <dt class="font-medium text-gray-600">Aset</dt><dd class="col-span-2">{{ $ticket->asset->code }} · {{ $ticket->asset->name }}</dd>
+            @endif
             <dt class="font-medium text-gray-600">Judul</dt><dd class="col-span-2">{{ $ticket->title }}</dd>
             <dt class="font-medium text-gray-600">Deskripsi</dt><dd class="col-span-2 whitespace-pre-line">{{ $ticket->description }}</dd>
         </dl>
