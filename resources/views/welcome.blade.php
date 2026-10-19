@@ -115,26 +115,6 @@
 @endphp
     <div class="w-full py-6 px-3 sm:px-6">
 
-        @if ($scanAsset)
-            <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-                <div class="text-sm text-green-900">
-                    <div class="font-semibold">{{ $scanAsset->code }} · {{ $scanAsset->name }}</div>
-                    <div class="text-green-800">Pemegang: {{ $scanAsset->holder_name ?? '-' }}</div>
-                </div>
-                @auth
-                    <button type="button" @click="showModal = true"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm">
-                        Laporkan Masalah Perangkat Ini
-                    </button>
-                @else
-                    <a href="{{ route('assets.scan.ticket', $scanAsset->code) }}"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold text-sm text-center">
-                        Login untuk Laporkan Masalah
-                    </a>
-                @endauth
-            </div>
-        @endif
-
         {{-- Header --}}
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-3">
             <div class="flex items-center gap-3">
