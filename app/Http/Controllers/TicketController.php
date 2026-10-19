@@ -134,7 +134,9 @@ class TicketController extends Controller
             ->cc($ccList)
             ->send(new TicketCreatedUser($ticket));
 
-        Mail::to(config('helpdesk.approvers'))->send(new TicketApprovalRequest($ticket));
+        foreach (config('helpdesk.approvers') as $approverEmail) {
+            Mail::to($approverEmail)->send(new TicketApprovalRequest($ticket, $approverEmail));
+        }
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim dan menunggu approval Lead IT.');
     }
@@ -162,22 +164,82 @@ class TicketController extends Controller
     {
         $this->ensureApprover();
 
-        $ticket = Ticket::where('status', 'pending_approval')->findOrFail($id);
-        $ticket->update([
+        $note = $this->processApproval((int) $id, Auth::user(), $request->boolean('create_project'));
+
+        return back()->with($note === null ? 'error' : 'success', $note ?? 'Ticket sudah diproses oleh approver lain.');
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $this->ensureApprover();
+
+        $data = $request->validate(['approval_note' => 'required|string|max:500']);
+
+        $ok = $this->processRejection((int) $id, Auth::user(), $data['approval_note']);
+
+        return back()->with($ok ? 'success' : 'error', $ok ? "Ticket #{$id} ditolak." : 'Ticket sudah diproses oleh approver lain.');
+    }
+
+    // Approve/reject lewat link di email (tanpa login, dijaga signed URL)
+    private function resolveEmailApprover(Request $request): \App\Models\User
+    {
+        $email = strtolower((string) $request->query('approver'));
+
+        abort_unless(in_array($email, array_map('strtolower', config('helpdesk.approvers'))), 403);
+
+        return \App\Models\User::whereRaw('lower(email) = ?', [$email])->firstOrFail();
+    }
+
+    public function emailApprovalShow(Request $request, $id)
+    {
+        $approver = $this->resolveEmailApprover($request);
+        $ticket = Ticket::findOrFail($id);
+
+        return view('tickets.approval-email', compact('ticket', 'approver'));
+    }
+
+    public function emailApprovalAct(Request $request, $id)
+    {
+        $approver = $this->resolveEmailApprover($request);
+
+        if ($request->input('decision') === 'approve') {
+            $note = $this->processApproval((int) $id, $approver, $request->boolean('create_project'));
+            $message = $note ?? 'Ticket ini sudah diproses oleh approver lain.';
+            $ok = $note !== null;
+        } else {
+            $data = $request->validate(['approval_note' => 'required|string|max:500']);
+            $ok = $this->processRejection((int) $id, $approver, $data['approval_note']);
+            $message = $ok ? "Ticket #{$id} ditolak." : 'Ticket ini sudah diproses oleh approver lain.';
+        }
+
+        return view('tickets.approval-email-result', compact('ok', 'message'));
+    }
+
+    /** @return string|null pesan sukses, null jika tiket sudah tidak menunggu approval */
+    private function processApproval(int $id, \App\Models\User $approver, bool $createProject): ?string
+    {
+        // update bersyarat supaya dua approver tidak bisa memproses tiket yang sama
+        $affected = Ticket::where('id', $id)->where('status', 'pending_approval')->update([
             'status'      => 'open',
-            'approved_by' => Auth::id(),
+            'approved_by' => $approver->id,
             'approved_at' => now(),
         ]);
 
+        if (!$affected) {
+            return null;
+        }
+
+        $ticket = Ticket::findOrFail($id);
         $projectNote = '';
-        if ($request->boolean('create_project') && !$ticket->project) {
+
+        if ($createProject && !$ticket->project) {
             $project = \App\Models\Project::create([
                 'name'        => $ticket->title,
                 'category'    => 'program',
                 'description' => nl2br(e($ticket->description)),
                 'status'      => 'todo',
-                'created_by'  => Auth::id(),
-                'updated_by'  => Auth::id(),
+                'created_by'  => $approver->id,
+                'updated_by'  => $approver->id,
                 'ticket_id'   => $ticket->id,
             ]);
             $project->logActivity('created_from_ticket', "Dibuat dari ticket #{$ticket->id}");
@@ -194,27 +256,26 @@ class TicketController extends Controller
             'ferry.indrawan@plazatoyota.co.id'
         ])->send(new TicketCreatedTeam($ticket));
 
-        return back()->with('success', "Ticket #{$ticket->id} disetujui.".$projectNote);
+        return "Ticket #{$ticket->id} disetujui oleh {$approver->name}.".$projectNote;
     }
 
-    public function reject(Request $request, $id)
+    private function processRejection(int $id, \App\Models\User $approver, string $note): bool
     {
-        $this->ensureApprover();
-
-        $data = $request->validate(['approval_note' => 'required|string|max:500']);
-
-        $ticket = Ticket::where('status', 'pending_approval')->findOrFail($id);
-        $ticket->update([
+        $affected = Ticket::where('id', $id)->where('status', 'pending_approval')->update([
             'status'        => 'rejected',
-            'approved_by'   => Auth::id(),
+            'approved_by'   => $approver->id,
             'approved_at'   => now(),
-            'approval_note' => $data['approval_note'],
+            'approval_note' => $note,
             'finished_at'   => now(),
         ]);
 
-        Mail::to($ticket->email)->send(new TicketApprovalResultUser($ticket));
+        if (!$affected) {
+            return false;
+        }
 
-        return back()->with('success', "Ticket #{$ticket->id} ditolak.");
+        Mail::to(Ticket::findOrFail($id)->email)->send(new TicketApprovalResultUser(Ticket::findOrFail($id)));
+
+        return true;
     }
 
     public function detail($id)

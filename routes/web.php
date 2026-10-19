@@ -14,6 +14,12 @@ use App\Http\Controllers\ProjectBoardController;
 use App\Http\Controllers\UserAccessManagementController;
 
 
+// Approve/reject ticket lewat link email (signed URL, tanpa login)
+Route::middleware('signed')->group(function () {
+    Route::get('/approval-email/{id}', [TicketController::class, 'emailApprovalShow'])->name('approvals.email.show');
+    Route::post('/approval-email/{id}', [TicketController::class, 'emailApprovalAct'])->name('approvals.email.act');
+});
+
 // HALAMAN UTAMA diarahkan ke TicketController@index
 Route::get('/', [TicketController::class, 'index'])->name('welcome');
 

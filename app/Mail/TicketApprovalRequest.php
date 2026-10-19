@@ -13,9 +13,16 @@ class TicketApprovalRequest extends Mailable
 
     public $ticket;
 
-    public function __construct(Ticket $ticket)
+    public $reviewUrl;
+
+    public function __construct(Ticket $ticket, string $approverEmail)
     {
         $this->ticket = $ticket;
+        $this->reviewUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'approvals.email.show',
+            now()->addDays(3),
+            ['id' => $ticket->id, 'approver' => $approverEmail]
+        );
     }
 
     public function build()

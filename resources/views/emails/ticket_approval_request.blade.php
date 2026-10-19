@@ -14,10 +14,14 @@
             <tr><td style="font-weight:bold;">Judul</td><td>{{ $ticket->title }}</td></tr>
             <tr><td style="font-weight:bold;">Deskripsi</td><td>{{ $ticket->description }}</td></tr>
         </table>
-        <a href="{{ route('approvals.index') }}"
-            style="display:inline-block; margin-top:20px; padding:10px 15px; background:#1d4ed8; color:#fff; text-decoration:none; border-radius:6px;">
-            Buka Halaman Approval
+        <a href="{{ $reviewUrl }}"
+            style="display:inline-block; margin-top:20px; padding:12px 20px; background:#16a34a; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
+            Tinjau &amp; Putuskan (Setujui / Tolak)
         </a>
+        <p style="margin-top:12px; font-size:13px; color:#6b7280;">
+            Link ini berlaku 3 hari dan khusus untuk Anda. Anda juga bisa memproses ticket dari
+            <a href="{{ route('approvals.index') }}" style="color:#1d4ed8;">halaman Approval</a>.
+        </p>
         <p style="margin-top:25px; font-size:12px; color:#6b7280;">Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.</p>
     </div>
 </body>
