@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-900">{{ $audit->name }}</h2>
                 <div class="text-sm text-gray-500 mt-0.5">{{ $audit->cabang ?? 'Semua cabang' }} · {{ $audit->isOpen() ? 'Berjalan' : 'Selesai '.$audit->closed_at->format('d M Y H:i') }}</div>
             </div>
-            <div class="flex gap-2 shrink-0">
+            <div class="flex flex-wrap gap-2">
                 @if ($audit->isOpen())
                     <form method="POST" action="{{ route('assets.audits.close', $audit) }}" onsubmit="return confirm('Tutup opname? {{ $pending->count() }} aset belum terverifikasi.')">
                         @csrf

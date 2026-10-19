@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
             <div>
                 <h2 class="text-2xl font-semibold text-gray-900">{{ $asset->name }}</h2>
                 <div class="text-sm text-gray-500 mt-0.5">{{ $asset->code }} · {{ $asset->type }}</div>
             </div>
-            <div class="flex gap-2 shrink-0">
+            <div class="flex flex-wrap gap-2">
                 @if ($openAudit)
                     <form method="POST" action="{{ route('assets.audits.verify', [$openAudit, $asset]) }}">@csrf
                         <button class="px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 text-sm">Verifikasi di Opname</button>

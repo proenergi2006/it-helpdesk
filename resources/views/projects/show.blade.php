@@ -170,7 +170,7 @@
                 <div class="text-sm font-medium text-gray-700 mb-2">Deskripsi</div>
 
                 {{-- render html dari trix --}}
-                <div class="prose max-w-none">
+                <div class="prose max-w-none break-words [overflow-wrap:anywhere]">
                     {!! $project->description ?: '<span class="text-gray-500">-</span>' !!}
                 </div>
             </div>
@@ -225,7 +225,7 @@
                                 </form>
                             </div>
 
-                            <div class="prose max-w-none mt-3">
+                            <div class="prose max-w-none mt-3 break-words [overflow-wrap:anywhere]">
                                 {!! $u->content !!}
                             </div>
                         </div>
