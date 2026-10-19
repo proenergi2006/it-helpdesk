@@ -89,6 +89,9 @@ class TicketController extends Controller
             $slaResolutionMinutes = 240;
         }
 
+        // Incident langsung diproses; Request (change request) perlu approval
+        $needsApproval = $validated['klasifikasi'] !== 'Incident';
+
         $ticket = Ticket::create([
             'user_id'                => $user->id,
             'nama'                   => $user->name,
@@ -99,7 +102,7 @@ class TicketController extends Controller
             'priority'               => $validated['priority'],
             'klasifikasi'            => $validated['klasifikasi'],
             'description'            => $validated['description'],
-            'status'                 => 'pending_approval',
+            'status'                 => $needsApproval ? 'pending_approval' : 'open',
             'cc_emails'              => $request->cc_emails,
             'sla_response_minutes'   => $slaResponseMinutes,
             'sla_resolution_minutes' => $slaResolutionMinutes,
@@ -133,6 +136,18 @@ class TicketController extends Controller
         Mail::to($ticket->email)
             ->cc($ccList)
             ->send(new TicketCreatedUser($ticket));
+
+        if (!$needsApproval) {
+            Mail::to([
+                'iwan.hermawan@proenergi.co.id',
+                'fadli.fathur@proenergi.co.id',
+                'gary.salsabilla@proenergi.co.id',
+                'sultony.saddam@proenergi.co.id',
+                'ferry.indrawan@plazatoyota.co.id'
+            ])->send(new TicketCreatedTeam($ticket));
+
+            return redirect()->route('welcome')->with('success', 'Ticket Incident berhasil dikirim dan langsung diproses tim IT.');
+        }
 
         foreach (config('helpdesk.approvers') as $approverEmail) {
             Mail::to($approverEmail)->send(new TicketApprovalRequest($ticket, $approverEmail));

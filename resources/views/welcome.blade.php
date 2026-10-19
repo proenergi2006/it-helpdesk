@@ -483,8 +483,8 @@
                         <select name="klasifikasi"
                             class="w-full border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
                             <option value="">Pilih Klasifikasi</option>
-                            <option value="Incident">Incident (Gangguan / Error)</option>
-                            <option value="Request">Request (Permintaan Fitur / Akses)</option>
+                            <option value="Incident">Incident (Gangguan / Error) - langsung diproses</option>
+                            <option value="Request">Change Request (Permintaan Fitur / Akses) - perlu approval</option>
                         </select>
                     </div>
 
