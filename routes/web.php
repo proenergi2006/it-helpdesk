@@ -128,6 +128,9 @@ Route::middleware(['auth', 'role:it'])->group(function () {
     Route::post('/projects/board/move', [ProjectBoardController::class, 'move'])->name('projects.board.move');
     Route::post('/projects/board/quick-add', [ProjectBoardController::class, 'quickAdd'])->name('projects.board.quickAdd');
 
+    Route::post('projects/{project}/sdlc/{stage}/document', [ProjectController::class, 'uploadSdlcDocument'])->name('projects.sdlc.upload');
+    Route::get('projects/{project}/sdlc/{stage}/document', [ProjectController::class, 'downloadSdlcDocument'])->name('projects.sdlc.download');
+    Route::post('projects/{project}/sdlc/{stage}/toggle', [ProjectController::class, 'toggleSdlcStage'])->name('projects.sdlc.toggle');
     Route::resource('projects', ProjectController::class);
     Route::resource('meetings', MeetingController::class);
     Route::get('meetings/{meeting}/export-pdf', [MeetingController::class, 'exportPdf'])->name('meetings.export.pdf');

@@ -158,7 +158,7 @@ class TicketController extends Controller
         return view('tickets.approvals', compact('tickets'));
     }
 
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
         $this->ensureApprover();
 
@@ -168,6 +168,21 @@ class TicketController extends Controller
             'approved_by' => Auth::id(),
             'approved_at' => now(),
         ]);
+
+        $projectNote = '';
+        if ($request->boolean('create_project') && !$ticket->project) {
+            $project = \App\Models\Project::create([
+                'name'        => $ticket->title,
+                'category'    => 'program',
+                'description' => nl2br(e($ticket->description)),
+                'status'      => 'todo',
+                'created_by'  => Auth::id(),
+                'updated_by'  => Auth::id(),
+                'ticket_id'   => $ticket->id,
+            ]);
+            $project->logActivity('created_from_ticket', "Dibuat dari ticket #{$ticket->id}");
+            $projectNote = " Project #PRJ-{$project->id} (SDLC) dibuat.";
+        }
 
         Mail::to($ticket->email)->send(new TicketApprovalResultUser($ticket));
 
@@ -179,7 +194,7 @@ class TicketController extends Controller
             'ferry.indrawan@plazatoyota.co.id'
         ])->send(new TicketCreatedTeam($ticket));
 
-        return back()->with('success', "Ticket #{$ticket->id} disetujui.");
+        return back()->with('success', "Ticket #{$ticket->id} disetujui.".$projectNote);
     }
 
     public function reject(Request $request, $id)

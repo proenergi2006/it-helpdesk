@@ -20,6 +20,14 @@
                 </div>
             @endif
 
+            @if ($incompleteDocsCount > 0)
+                <a href="{{ route('projects.index', ['docs' => 'incomplete']) }}"
+                   class="block rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 hover:bg-amber-100">
+                    <strong>{{ $incompleteDocsCount }} project</strong> masih punya dokumen wajib yang belum lengkap.
+                    Dokumen harus lengkap sebelum tahap Deployment bisa diselesaikan. <span class="underline">Lihat daftar</span>
+                </a>
+            @endif
+
             <!-- Filter -->
             <div class="bg-white p-4 rounded-lg shadow">
                 <form class="grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -53,6 +61,11 @@
 
                    
                      
+
+                    <select name="docs" class="rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Semua dokumen</option>
+                        <option value="incomplete" @selected(request('docs')==='incomplete')>Dokumen belum lengkap</option>
+                    </select>
 
                     <div class="md:col-span-4 flex gap-2">
                         <button class="rounded-lg bg-gray-900 text-white px-4 py-2 hover:bg-gray-800">
@@ -127,6 +140,25 @@
                             <tr>
                                 <td class="px-4 py-3">
                                     <div class="font-medium text-gray-900">{{ $p->name }}</div>
+                                    @if ($p->sdlcStages->isNotEmpty())
+                                        @php $nextStage = $p->sdlcStages->firstWhere('done_at', null); @endphp
+                                        <div class="text-xs text-gray-500 mt-0.5">
+                                            SDLC {{ $p->sdlcStages->whereNotNull('done_at')->count() }}/{{ $p->sdlcStages->count() }}
+                                            · {{ $nextStage ? 'Tahap: '.$nextStage->name : 'Semua tahap selesai' }}
+                                        </div>
+                                        @php
+                                            $missingDocs = $p->missingRequiredDocuments();
+                                            $docTotal = $p->requiredDocumentsTotal();
+                                        @endphp
+                                        @if ($missingDocs->isEmpty())
+                                            <span class="mt-1 inline-flex rounded bg-green-50 px-2 py-0.5 text-xs text-green-700">Dokumen lengkap {{ $docTotal }}/{{ $docTotal }}</span>
+                                        @else
+                                            <span class="mt-1 inline-flex rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-800"
+                                                  title="Belum: {{ $missingDocs->pluck('name')->implode(', ') }}">
+                                                Dokumen {{ $docTotal - $missingDocs->count() }}/{{ $docTotal }} · kurang: {{ $missingDocs->pluck('name')->implode(', ') }}
+                                            </span>
+                                        @endif
+                                    @endif
                                 
                                     <div class="mt-1 flex items-center gap-2 text-xs text-gray-500">
                                         <span>#PRJ-{{ $p->id }}</span>

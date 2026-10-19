@@ -10,6 +10,9 @@
                     </h2>
                     <div class="text-sm text-gray-500 mt-0.5">
                         Project ID · #PRJ-{{ $project->id }}
+                        @if ($project->ticket)
+                            · dari ticket #{{ str_pad($project->ticket->id, 3, '0', STR_PAD_LEFT) }}
+                        @endif
                     </div>
                 </div>
     
@@ -64,6 +67,95 @@
             @if(session('success'))
                 <div class="p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">
                     {{ session('success') }}
+                </div>
+            @endif
+
+            {{-- CARD: SDLC --}}
+            @if ($project->sdlcStages->isNotEmpty())
+                @php
+                    $sdlcDone = $project->sdlcStages->whereNotNull('done_at')->count();
+                    $sdlcTotal = $project->sdlcStages->count();
+                @endphp
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="font-semibold text-gray-800">Tahapan SDLC</div>
+                        <div class="text-sm text-gray-500">{{ $sdlcDone }}/{{ $sdlcTotal }} selesai</div>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden mb-4">
+                        <div class="h-2 rounded-full bg-green-600" style="width: {{ $sdlcTotal ? round($sdlcDone / $sdlcTotal * 100) : 0 }}%"></div>
+                    </div>
+                    @php $missingDocs = $project->missingRequiredDocuments(); @endphp
+                    @if ($missingDocs->isNotEmpty())
+                        <div class="mb-3 p-3 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-sm">
+                            Dokumen wajib belum lengkap: <strong>{{ $missingDocs->pluck('name')->implode(', ') }}</strong>.
+                            Tahap Deployment baru bisa diselesaikan setelah semua dokumen wajib diupload.
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-3 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm">{{ session('error') }}</div>
+                    @endif
+                    @error('document')
+                        <div class="mb-3 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 text-sm">{{ $message }}</div>
+                    @enderror
+
+                    <ol class="space-y-2">
+                        @foreach ($project->sdlcStages as $stage)
+                            @php $blocked = $stage->requiresDocument() && !$stage->document_path && !$stage->done_at; @endphp
+                            <li class="border rounded-lg px-4 py-3">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold {{ $stage->done_at ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-600' }}">{{ $stage->position }}</span>
+                                        <div>
+                                            <div class="text-sm font-medium {{ $stage->done_at ? 'text-gray-500 line-through' : 'text-gray-800' }}">{{ $stage->name }}</div>
+                                            @if ($stage->done_at)
+                                                <div class="text-xs text-gray-400">Selesai {{ $stage->done_at->format('d M Y H:i') }}@if ($stage->doneBy) oleh {{ $stage->doneBy->name }}@endif</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ route('projects.sdlc.toggle', [$project, $stage]) }}">
+                                        @csrf
+                                        <button @disabled($blocked)
+                                            title="{{ $blocked ? 'Upload '.$stage->documentLabel().' (PDF) dulu' : '' }}"
+                                            class="px-3 py-1 rounded text-xs {{ $stage->done_at ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : ($blocked ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-500') }}">
+                                            {{ $stage->done_at ? 'Buka lagi' : 'Tandai selesai' }}
+                                        </button>
+                                    </form>
+                                </div>
+
+                                @if ($stage->acceptsDocument())
+                                    <div class="mt-3 ml-9 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                                        <span class="text-gray-600">
+                                            {{ $stage->documentLabel() }}
+                                            @if ($stage->requiresDocument())
+                                                <span class="text-red-600 text-xs font-semibold">wajib PDF</span>
+                                            @else
+                                                <span class="text-gray-400 text-xs">opsional</span>
+                                            @endif
+                                        </span>
+
+                                        @if ($stage->document_path)
+                                            <a href="{{ route('projects.sdlc.download', [$project, $stage]) }}"
+                                               class="text-blue-600 underline hover:text-blue-800">{{ $stage->document_name }}</a>
+                                            <span class="text-xs text-gray-400">
+                                                {{ $stage->document_uploaded_at?->format('d M Y H:i') }}@if ($stage->documentUploader) · {{ $stage->documentUploader->name }}@endif
+                                            </span>
+                                        @else
+                                            <span class="text-xs {{ $stage->requiresDocument() ? 'text-red-500' : 'text-gray-400' }}">Belum ada dokumen</span>
+                                        @endif
+
+                                        <form method="POST" action="{{ route('projects.sdlc.upload', [$project, $stage]) }}" enctype="multipart/form-data" class="flex items-center gap-2">
+                                            @csrf
+                                            <input type="file" name="document" accept="application/pdf" required class="text-xs">
+                                            <button class="px-3 py-1 rounded text-xs bg-indigo-600 text-white hover:bg-indigo-500">
+                                                {{ $stage->document_path ? 'Ganti' : 'Upload' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ol>
                 </div>
             @endif
 

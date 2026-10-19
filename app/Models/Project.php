@@ -11,7 +11,7 @@ class Project extends Model
     protected $fillable = [
         'name','category','description','status',
         'start_date','due_date','done_date',
-        'assigned_to','created_by','updated_by'
+        'assigned_to','created_by','updated_by','ticket_id'
     ];
 
     protected $casts = [
@@ -19,6 +19,48 @@ class Project extends Model
         'due_date'   => 'date',
         'done_date'  => 'date',
     ];
+
+    public const SDLC_STAGES = [
+        'Requirement',
+        'Design',
+        'Development',
+        'Testing / UAT',
+        'Deployment',
+        'Maintenance',
+    ];
+
+    protected static function booted(): void
+    {
+        // Project Program/Aplikasi baru otomatis punya tahapan SDLC
+        static::created(function (Project $project) {
+            if ($project->category === 'program') {
+                foreach (self::SDLC_STAGES as $i => $name) {
+                    $project->sdlcStages()->create(['name' => $name, 'position' => $i + 1]);
+                }
+            }
+        });
+    }
+
+    public function sdlcStages()
+    {
+        return $this->hasMany(ProjectSdlcStage::class)->orderBy('position');
+    }
+
+    /** Tahap yang dokumen wajibnya belum diupload */
+    public function missingRequiredDocuments()
+    {
+        return $this->sdlcStages->filter(fn ($s) => $s->requiresDocument() && !$s->document_path)->values();
+    }
+
+    public function requiredDocumentsTotal(): int
+    {
+        return $this->sdlcStages->filter(fn ($s) => $s->requiresDocument())->count();
+    }
+
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class);
+    }
 
     public function assignee(): BelongsTo
     {

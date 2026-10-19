@@ -36,6 +36,10 @@
                                 <td class="p-2">
                                     <form method="POST" action="{{ route('approvals.approve', $t->id) }}" class="mb-2">
                                         @csrf
+                                        <label class="flex items-start gap-1 text-xs text-gray-700 mb-1">
+                                            <input type="checkbox" name="create_project" value="1" class="mt-0.5 rounded">
+                                            <span>Buat Project + SDLC<br><span class="text-gray-400">(aplikasi baru / perubahan mayor)</span></span>
+                                        </label>
                                         <button class="px-3 py-1 rounded bg-green-600 text-white text-xs">Approve</button>
                                     </form>
                                     <form method="POST" action="{{ route('approvals.reject', $t->id) }}">

@@ -42,6 +42,11 @@ class Ticket extends Model
         };
     }
 
+    public function project()
+    {
+        return $this->hasOne(Project::class, 'ticket_id');
+    }
+
     public function takenByUser()
     {
         return $this->belongsTo(User::class, 'taken_by');

@@ -12,7 +12,7 @@ class ProjectController extends Controller
 
     public function index(Request $request)
     {
-        $q = Project::query()->with(['assignees','creator','updater'])->latest();
+        $q = Project::query()->with(['assignees','creator','updater','sdlcStages'])->latest();
 
         if ($request->filled('q')) {
             $q->where('name', 'like', '%'.$request->q.'%');
@@ -30,6 +30,12 @@ class ProjectController extends Controller
             });
         }
         
+        if ($request->input('docs') === 'incomplete') {
+            $q->whereHas('sdlcStages', fn ($qq) => $qq
+                ->whereIn('name', \App\Models\ProjectSdlcStage::requiredNames())
+                ->whereNull('document_path'));
+        }
+
         if (request('mine') === '1') {
             $q->whereHas('assignees', fn($qq) => $qq->where('users.id', auth()->id()));
         }
@@ -37,7 +43,11 @@ class ProjectController extends Controller
         $projects = $q->paginate(10)->withQueryString();
         $users = User::orderBy('name')->get(['id','name','email']);
 
-        return view('projects.index', compact('projects','users'));
+        $incompleteDocsCount = Project::whereHas('sdlcStages', fn ($qq) => $qq
+            ->whereIn('name', \App\Models\ProjectSdlcStage::requiredNames())
+            ->whereNull('document_path'))->count();
+
+        return view('projects.index', compact('projects','users','incompleteDocsCount'));
     }
 
     public function create()
@@ -172,9 +182,85 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', 'Project berhasil dihapus.');
     }
 
+    private function authorizeSdlc(Project $project, \App\Models\ProjectSdlcStage $stage): void
+    {
+        abort_unless($stage->project_id === $project->id, 404);
+
+        $isAdmin = in_array(auth()->user()->email, ['iwan.hermawan@proenergi.co.id', 'reno.oktavian@proenergi.com'], true);
+        abort_unless($isAdmin || $project->assignees()->where('users.id', auth()->id())->exists(), 403);
+    }
+
+    public function toggleSdlcStage(Project $project, \App\Models\ProjectSdlcStage $stage)
+    {
+        $this->authorizeSdlc($project, $stage);
+
+        if ($stage->done_at) {
+            $stage->update(['done_at' => null, 'done_by' => null]);
+            $project->logActivity('sdlc_reopened', "Membuka kembali tahap SDLC: {$stage->name}");
+
+            return back();
+        }
+
+        if ($stage->name === 'Deployment') {
+            $missing = $project->sdlcStages
+                ->filter(fn ($s) => $s->name !== 'Deployment' && $s->requiresDocument() && !$s->document_path)
+                ->pluck('name');
+
+            if ($missing->isNotEmpty()) {
+                return back()->with('error', 'Deployment belum bisa diselesaikan. Dokumen wajib belum lengkap: '.$missing->implode(', ').'.');
+            }
+        }
+
+        if ($stage->requiresDocument() && !$stage->document_path) {
+            return back()->with('error', "Tahap {$stage->name} wajib upload {$stage->documentLabel()} (PDF) sebelum ditandai selesai.");
+        }
+
+        $stage->update(['done_at' => now(), 'done_by' => auth()->id()]);
+        $project->logActivity('sdlc_done', "Menyelesaikan tahap SDLC: {$stage->name}");
+
+        return back();
+    }
+
+    public function uploadSdlcDocument(Request $request, Project $project, \App\Models\ProjectSdlcStage $stage)
+    {
+        $this->authorizeSdlc($project, $stage);
+        abort_unless($stage->acceptsDocument(), 404);
+
+        $request->validate([
+            'document' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ], [
+            'document.mimes' => 'Dokumen harus berformat PDF.',
+            'document.max'   => 'Ukuran dokumen maksimal 10 MB.',
+        ]);
+
+        $file = $request->file('document');
+
+        if ($stage->document_path) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($stage->document_path);
+        }
+
+        $stage->update([
+            'document_path'        => $file->store("sdlc/{$project->id}", 'local'),
+            'document_name'        => $file->getClientOriginalName(),
+            'document_uploaded_by' => auth()->id(),
+            'document_uploaded_at' => now(),
+        ]);
+
+        $project->logActivity('sdlc_document', "Upload {$stage->documentLabel()}: {$stage->document_name}");
+
+        return back()->with('success', "{$stage->documentLabel()} berhasil diupload.");
+    }
+
+    public function downloadSdlcDocument(Project $project, \App\Models\ProjectSdlcStage $stage)
+    {
+        abort_unless($stage->project_id === $project->id && $stage->document_path, 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->download($stage->document_path, $stage->document_name);
+    }
+
     public function show(Project $project)
 {
-    $project->load(['assignees', 'updates.user','activities.user']);
+    $project->load(['assignees', 'updates.user','activities.user','sdlcStages','ticket']);
     return view('projects.show', compact('project'));
 }
 
