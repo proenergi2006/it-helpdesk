@@ -9,6 +9,9 @@ return new class extends Migration {
     {
         Schema::table('projects', function (Blueprint $table) {
             if (Schema::hasColumn('projects', 'assigned_to')) {
+                if (Schema::getConnection()->getDriverName() === 'sqlite') {
+                    $table->dropIndex(['status', 'assigned_to']);
+                }
                 $table->dropConstrainedForeignId('assigned_to');
             }
         });
