@@ -37,7 +37,7 @@ class Asset extends Model
     ];
 
     protected $fillable = [
-        'code', 'department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'code', 'legacy_code', 'department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
@@ -56,6 +56,14 @@ class Asset extends Model
                 $asset->forceFill(['code' => self::makeCode($asset)])->saveQuietly();
             }
         });
+    }
+
+    // Cari berdasarkan kode saat ini atau kode lama (QR lama tetap terbaca)
+    public function scopeByCode($query, string $code)
+    {
+        $code = strtoupper(trim($code));
+
+        return $query->where(fn ($q) => $q->where('code', $code)->orWhere('legacy_code', $code));
     }
 
     public static function makeCode(Asset $asset): string

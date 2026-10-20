@@ -26,6 +26,7 @@ class AssetController extends Controller
             $term = '%'.$request->q.'%';
             $q->where(fn ($qq) => $qq
                 ->where('code', 'like', $term)
+                ->orWhere('legacy_code', 'like', $term)
                 ->orWhere('accurate_no', 'like', $term)
                 ->orWhere('name', 'like', $term)
                 ->orWhere('serial_number', 'like', $term)
@@ -126,7 +127,7 @@ class AssetController extends Controller
     // publik yang hanya menampilkan kode, nama, dan pemegang aset
     public function scan(string $code)
     {
-        $asset = Asset::where('code', strtoupper($code))->firstOrFail();
+        $asset = Asset::byCode($code)->firstOrFail();
 
         if (Auth::check() && Auth::user()->role === 'it') {
             return redirect()->route('assets.show', $asset);
@@ -138,7 +139,7 @@ class AssetController extends Controller
     // Tombol "Buat Tiket" di halaman depan: wajib login, lalu form tiket terbuka dengan aset terisi
     public function scanTicket(string $code)
     {
-        $asset = Asset::where('code', strtoupper($code))->firstOrFail();
+        $asset = Asset::byCode($code)->firstOrFail();
 
         return redirect()->route('welcome', ['open_ticket' => 1, 'asset' => $asset->code]);
     }

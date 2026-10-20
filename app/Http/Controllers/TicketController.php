@@ -44,7 +44,7 @@ class TicketController extends Controller
 
         // hasil scan QR: untuk publik hanya kode, nama, dan pemegang yang ditampilkan
         $scanAsset = request('asset')
-            ? \App\Models\Asset::with('user')->where('code', strtoupper(request('asset')))->first()
+            ? \App\Models\Asset::with('user')->byCode(request('asset'))->first()
             : null;
         $scanCabang = Auth::check() ? $scanAsset?->cabang : null;
 
@@ -87,7 +87,7 @@ class TicketController extends Controller
         // aset opsional: diisi dari scan QR atau diketik manual
         $asset = null;
         if (!empty($validated['asset_code'])) {
-            $asset = \App\Models\Asset::where('code', strtoupper(trim($validated['asset_code'])))->first();
+            $asset = \App\Models\Asset::byCode($validated['asset_code'])->first();
 
             if (!$asset) {
                 return redirect()->route('welcome', ['open_ticket' => 1])

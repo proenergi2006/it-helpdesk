@@ -51,7 +51,7 @@ class AssetAuditController extends Controller
 
         // QR berisi URL .../assets/scan/AST-0001; pemindai bisa mengirim URL penuh atau hanya kodenya
         $code = strtoupper(trim(basename(parse_url(trim($request->code), PHP_URL_PATH) ?: $request->code)));
-        $asset = Asset::where('code', $code)->first();
+        $asset = Asset::byCode($code)->first();
 
         if (!$asset) {
             return back()->with('error', "Kode {$code} tidak ditemukan.");
