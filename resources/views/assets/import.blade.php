@@ -15,7 +15,8 @@
             <div class="bg-white rounded-xl shadow p-6 space-y-4">
                 <ol class="list-decimal ml-5 text-sm text-gray-700 space-y-1">
                     <li>Unduh template, lalu isi satu perangkat per baris. Kolom <strong>nama</strong> dan <strong>jenis</strong> wajib.</li>
-                    <li>Kode aset (AST-0001, dst.) dibuat otomatis. Baris dengan serial number yang sudah terdaftar dilewati.</li>
+                    <li>Kode aset dibuat otomatis. Baris dengan serial number yang sudah terdaftar dilewati.</li>
+                    <li>Kolom <strong>departemen</strong> berisi singkatan ({{ implode(', ', array_keys(\App\Models\Asset::DEPARTMENTS)) }}); kosong dianggap IT. Cabang dipakai untuk membentuk kode, contoh <code>AST-IT-JKT-0012</code>.</li>
                     <li>Kolom <strong>no_aset_accurate</strong> opsional. Jika nomor sudah ada di helpdesk, data aset itu diperbarui (tidak dibuat dobel).</li>
                     <li>Kolom status: aktif, dipinjam, rusak, diperbaiki, disposal. Tanggal format <code>2024-03-15</code>.</li>
                     <li>Format file: .xlsx, .xls, atau .csv (maksimal 5 MB).</li>

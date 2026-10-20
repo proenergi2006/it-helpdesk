@@ -482,12 +482,12 @@
                     <div class="md:col-span-2">
                         <label class="block text-gray-700 font-medium mb-1">
                             Kode Aset (Opsional)
-                            <span class="text-xs text-gray-500">(scan QR di perangkat atau ketik kode, contoh: AST-0012)</span>
+                            <span class="text-xs text-gray-500">(scan QR di perangkat atau ketik kode, contoh: AST-IT-JKT-0012)</span>
                         </label>
                         <input name="asset_code" type="text" maxlength="30"
                             value="{{ $scanAsset->code ?? old('asset_code') }}"
                             class="w-full border-gray-300 rounded-md uppercase focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="AST-0000">
+                            placeholder="AST-IT-JKT-0000">
                         @if ($scanAsset)
                             <p class="mt-2 text-xs text-green-700">
                                 Perangkat: {{ $scanAsset->name }}@if ($scanAsset->holder_name) · Pemegang: {{ $scanAsset->holder_name }}@endif

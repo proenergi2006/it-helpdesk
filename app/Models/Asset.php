@@ -24,8 +24,20 @@ class Asset extends Model
         'Palembang', 'Banjarmasin', 'Pontianak', 'Sulawesi',
     ];
 
+    // Singkatan cabang untuk kode aset. Setelah dipakai di label, jangan diubah.
+    public const CABANG_CODES = [
+        'Head Office' => 'HO', 'Jakarta' => 'JKT', 'Surabaya' => 'SBY', 'Samarinda' => 'SMD',
+        'Palembang' => 'PLG', 'Banjarmasin' => 'BJM', 'Pontianak' => 'PTK', 'Sulawesi' => 'SLW',
+    ];
+
+    // Departemen pemilik aset: singkatan => nama. Sesuaikan dengan daftar departemen perusahaan.
+    public const DEPARTMENTS = [
+        'IT' => 'IT', 'FIN' => 'Finance', 'HR' => 'HR', 'GA' => 'General Affair',
+        'OPS' => 'Operasional', 'MKT' => 'Marketing',
+    ];
+
     protected $fillable = [
-        'code', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'code', 'department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
@@ -36,12 +48,27 @@ class Asset extends Model
 
     protected static function booted(): void
     {
-        // kode aset otomatis: AST-0001, AST-0002, ...
+        // kode aset otomatis: AST-{DEPT}-{CABANG}-{NOMOR}, contoh AST-IT-JKT-0012.
+        // Dikunci saat aset dibuat dan tidak berubah walau aset dimutasi.
+        // Nomor memakai ID aset sehingga satu rangkaian untuk semua dan tidak bisa bentrok.
         static::created(function (Asset $asset) {
             if (!$asset->code) {
-                $asset->forceFill(['code' => sprintf('AST-%04d', $asset->id)])->saveQuietly();
+                $asset->forceFill(['code' => self::makeCode($asset)])->saveQuietly();
             }
         });
+    }
+
+    public static function makeCode(Asset $asset): string
+    {
+        $dept = $asset->department ?: 'IT';
+        $cabang = self::CABANG_CODES[$asset->cabang] ?? 'NA';
+
+        return sprintf('AST-%s-%s-%04d', $dept, $cabang, $asset->id);
+    }
+
+    public function getDepartmentNameAttribute(): ?string
+    {
+        return $this->department ? (self::DEPARTMENTS[$this->department] ?? $this->department) : null;
     }
 
     public function getPhotoUrlAttribute(): ?string

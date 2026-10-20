@@ -35,6 +35,17 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Departemen Pemilik</label>
+                    <select name="department" @required(!$editing) class="{{ $input }}">
+                        <option value="">Pilih departemen</option>
+                        @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
+                            <option value="{{ $k }}" @selected($field('department', $editing ? null : 'IT') === $k)>{{ $v }} ({{ $k }})</option>
+                        @endforeach
+                    </select>
+                    @error('department') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" required class="{{ $input }}">
                         @foreach (\App\Models\Asset::STATUSES as $k => $v)
@@ -83,12 +94,16 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang</label>
-                    <select name="cabang" class="{{ $input }}">
+                    <select name="cabang" @required(!$editing) class="{{ $input }}">
                         <option value="">Pilih cabang</option>
                         @foreach (\App\Models\Asset::CABANG as $c)
                             <option value="{{ $c }}" @selected($field('cabang') === $c)>{{ $c }}</option>
                         @endforeach
                     </select>
+                    @error('cabang') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                    @if (!$editing)
+                        <p class="text-xs text-gray-500 mt-1">Departemen dan cabang dipakai untuk membentuk kode aset dan dikunci setelah dibuat. Pindah cabang berikutnya dicatat lewat Mutasi.</p>
+                    @endif
                 </div>
 
                 <div>

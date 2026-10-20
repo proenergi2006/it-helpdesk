@@ -40,6 +40,7 @@
                         @php
                             $rows = [
                                 'Status' => $asset->status_label,
+                                'Departemen' => $asset->department_name ?? '-',
                                 'Merk / Model' => trim($asset->brand.' '.$asset->model) ?: '-',
                                 'No. Aset Accurate' => $asset->accurate_no ?? '-',
                                 'Serial Number' => $asset->serial_number ?? '-',

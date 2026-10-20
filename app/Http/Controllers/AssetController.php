@@ -14,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class AssetController extends Controller
 {
     private const IMPORT_HEADERS = [
-        'no_aset_accurate', 'nama', 'jenis', 'merk', 'model', 'serial_number', 'cabang', 'lokasi',
+        'no_aset_accurate', 'departemen', 'nama', 'jenis', 'merk', 'model', 'serial_number', 'cabang', 'lokasi',
         'pengguna', 'status', 'tanggal_beli', 'garansi_sampai', 'catatan',
     ];
 
@@ -32,7 +32,7 @@ class AssetController extends Controller
                 ->orWhere('user_name', 'like', $term)
                 ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)));
         }
-        foreach (['type', 'cabang', 'status'] as $f) {
+        foreach (['type', 'cabang', 'status', 'department'] as $f) {
             if ($request->filled($f)) {
                 $q->where($f, $request->input($f));
             }
@@ -154,7 +154,7 @@ class AssetController extends Controller
         $ws = $sheet->getActiveSheet();
         $ws->fromArray([
             self::IMPORT_HEADERS,
-            ['FA-00123', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'aktif', '2024-03-15', '2027-03-15', ''],
+            ['FA-00123', 'IT', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'aktif', '2024-03-15', '2027-03-15', ''],
         ]);
 
         return response()->streamDownload(function () use ($sheet) {
@@ -230,12 +230,16 @@ class AssetController extends Controller
                 'notes'          => ($data['catatan'] ?? '') ?: null,
             ];
 
+            $dept = strtoupper($data['departemen'] ?? '');
+            $dept = array_key_exists($dept, Asset::DEPARTMENTS) ? $dept : null;
+
             if ($existing) {
-                // sudah ada (No. Aset Accurate sama): perbarui data, tanpa membuat dobel
-                $existing->update($attrs);
+                // sudah ada (No. Aset Accurate sama): perbarui data, tanpa membuat dobel.
+                // Kode aset tidak berubah.
+                $existing->update($attrs + ($dept ? ['department' => $dept] : []));
                 $updated++;
             } else {
-                Asset::create($attrs + ['created_by' => Auth::id()]);
+                Asset::create($attrs + ['department' => $dept ?? 'IT', 'created_by' => Auth::id()]);
                 $created++;
             }
         }
@@ -431,9 +435,10 @@ class AssetController extends Controller
             'type'           => ['required', 'string', 'max:50'],
             'brand'          => ['nullable', 'string', 'max:100'],
             'model'          => ['nullable', 'string', 'max:100'],
+            'department'     => [$asset ? 'nullable' : 'required', Rule::in(array_keys(Asset::DEPARTMENTS))],
             'accurate_no'    => ['nullable', 'string', 'max:50', Rule::unique('assets', 'accurate_no')->ignore($asset?->id)],
             'serial_number'  => ['nullable', 'string', 'max:100', Rule::unique('assets', 'serial_number')->ignore($asset?->id)],
-            'cabang'         => ['nullable', 'string', 'max:50'],
+            'cabang'         => [$asset ? 'nullable' : 'required', 'string', 'max:50'],
             'location'       => ['nullable', 'string', 'max:150'],
             'user_id'        => ['nullable', 'integer', 'exists:users,id'],
             'user_name'      => ['nullable', 'string', 'max:150'],

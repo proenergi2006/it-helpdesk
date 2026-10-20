@@ -20,13 +20,19 @@
                 <div class="p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">{{ session('error') }}</div>
             @endif
 
-            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-5 gap-3">
+            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-6 gap-3">
                 <input name="q" value="{{ request('q') }}" placeholder="Cari kode, no. Accurate, nama, serial, pengguna..."
                        class="rounded-lg border-gray-300 md:col-span-2">
                 <select name="type" class="rounded-lg border-gray-300">
                     <option value="">Semua jenis</option>
                     @foreach (\App\Models\Asset::TYPES as $t)
                         <option value="{{ $t }}" @selected(request('type') === $t)>{{ $t }}</option>
+                    @endforeach
+                </select>
+                <select name="department" class="rounded-lg border-gray-300">
+                    <option value="">Semua departemen</option>
+                    @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
+                        <option value="{{ $k }}" @selected(request('department') === $k)>{{ $v }}</option>
                     @endforeach
                 </select>
                 <select name="cabang" class="rounded-lg border-gray-300">
