@@ -354,7 +354,7 @@ class AssetController extends Controller
             $asset->update(['status' => $data['status_after']]);
         }
 
-        return redirect()->route('assets.show', $asset)->with('success', 'Perbaikan berhasil dicatat.');
+        return redirect()->route('assets.show', $asset)->with(['success' => 'Perbaikan berhasil dicatat.', 'tab' => 'perbaikan']);
     }
 
     public function mutate(Request $request, Asset $asset)
@@ -370,10 +370,10 @@ class AssetController extends Controller
 
         $changed = $asset->mutateTo($data, $data['reason'], $data['mutated_at'], Auth::id());
 
-        return redirect()->route('assets.show', $asset)->with(
-            $changed ? 'success' : 'error',
-            $changed ? 'Mutasi aset berhasil dicatat.' : 'Tidak ada perubahan lokasi atau pengguna.'
-        );
+        return redirect()->route('assets.show', $asset)->with([
+            ($changed ? 'success' : 'error') => $changed ? 'Mutasi aset berhasil dicatat.' : 'Tidak ada perubahan lokasi atau pengguna.',
+            'tab' => 'mutasi',
+        ]);
     }
 
     private function savePhoto(Request $request, Asset $asset): void
