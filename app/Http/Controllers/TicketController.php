@@ -61,6 +61,19 @@ class TicketController extends Controller
         ));
     }
 
+    // Kirim permintaan approval ke tiap approver. Hasilnya dicatat di log supaya kegagalan terlihat.
+    private function sendApprovalRequests(Ticket $ticket): void
+    {
+        foreach ((array) config('helpdesk.approvers', []) as $approverEmail) {
+            try {
+                Mail::to($approverEmail)->send(new TicketApprovalRequest($ticket, $approverEmail));
+                Log::info('Email approval terkirim', ['ticket' => $ticket->id, 'to' => $approverEmail]);
+            } catch (\Throwable $e) {
+                Log::error('Gagal kirim email approval', ['ticket' => $ticket->id, 'to' => $approverEmail, 'error' => $e->getMessage()]);
+            }
+        }
+    }
+
     public function store(Request $request)
     {
         if (!Auth::check()) {
@@ -155,24 +168,33 @@ class TicketController extends Controller
             });
         }
 
-        Mail::to($ticket->email)
-            ->cc($ccList)
-            ->send(new TicketCreatedUser($ticket));
-
-        if (!$needsApproval) {
-            Mail::to([
-                'iwan.hermawan@proenergi.co.id',
-                'fadli.fathur@proenergi.co.id',
-                'gary.salsabilla@proenergi.co.id',
-                'sultony.saddam@proenergi.co.id',
-                'ferry.indrawan@plazatoyota.co.id'
-            ])->send(new TicketCreatedTeam($ticket));
-
-            return redirect()->route('welcome')->with('success', 'Ticket Incident berhasil dikirim dan langsung diproses tim IT.');
+        if ($needsApproval) {
+            // approval dikirim lebih dulu; kegagalan satu email tidak boleh menghalangi yang lain
+            $this->sendApprovalRequests($ticket);
         }
 
-        foreach (config('helpdesk.approvers') as $approverEmail) {
-            Mail::to($approverEmail)->send(new TicketApprovalRequest($ticket, $approverEmail));
+        try {
+            Mail::to($ticket->email)
+                ->cc($ccList)
+                ->send(new TicketCreatedUser($ticket));
+        } catch (\Throwable $e) {
+            Log::error('Gagal kirim email konfirmasi ke user', ['ticket' => $ticket->id, 'error' => $e->getMessage()]);
+        }
+
+        if (!$needsApproval) {
+            try {
+                Mail::to([
+                    'iwan.hermawan@proenergi.co.id',
+                    'fadli.fathur@proenergi.co.id',
+                    'gary.salsabilla@proenergi.co.id',
+                    'sultony.saddam@proenergi.co.id',
+                    'ferry.indrawan@plazatoyota.co.id'
+                ])->send(new TicketCreatedTeam($ticket));
+            } catch (\Throwable $e) {
+                Log::error('Gagal kirim email ke tim IT', ['ticket' => $ticket->id, 'error' => $e->getMessage()]);
+            }
+
+            return redirect()->route('welcome')->with('success', 'Ticket Incident berhasil dikirim dan langsung diproses tim IT.');
         }
 
         return redirect()->route('welcome')->with('success', 'Ticket berhasil dikirim dan menunggu approval Lead IT.');

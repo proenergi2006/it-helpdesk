@@ -28,6 +28,7 @@ class TicketApprovalRequest extends Mailable
     public function build()
     {
         return $this->subject("Approval Dibutuhkan: Ticket #{$this->ticket->id}")
-            ->view('emails.ticket_approval_request');
+            ->view('emails.ticket_approval_request')
+            ->text('emails.ticket_approval_request_text');
     }
 }
