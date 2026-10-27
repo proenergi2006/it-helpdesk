@@ -37,7 +37,7 @@ class Asset extends Model
     ];
 
     protected $fillable = [
-        'code', 'legacy_code', 'department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'code', 'legacy_code', 'department', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
@@ -84,6 +84,29 @@ class Asset extends Model
         return $this->photo_path ? asset('storage/'.$this->photo_path) : null;
     }
 
+    // Dokumen wajib: foto aset (kolom photo_path) + tiga dokumen di tabel asset_documents
+    public const DOCUMENT_TYPES = [
+        'box'     => 'Foto kode pada dus (serial number, MO, type)',
+        'serial'  => 'Foto serial number pada unit',
+        'receipt' => 'Tanda terima user (PDF)',
+    ];
+
+    public function documents()
+    {
+        return $this->hasMany(AssetDocument::class);
+    }
+
+    public function document(string $type): ?AssetDocument
+    {
+        return $this->documents->firstWhere('type', $type);
+    }
+
+    // Berapa dari 4 dokumen yang sudah ada (foto aset, dus, serial, tanda terima)
+    public function getDocumentCountAttribute(): int
+    {
+        return ($this->photo_path ? 1 : 0) + $this->documents->whereIn('type', array_keys(self::DOCUMENT_TYPES))->count();
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -106,10 +129,11 @@ class Asset extends Model
     }
 
     /**
-     * Pindahkan aset (cabang / lokasi / pengguna) dan catat riwayatnya.
+     * Pindahkan aset (cabang / lokasi / pengguna / departemen pengguna) dan catat riwayatnya.
+     * $extra: from_cabang (cabang asal bila ingin dicatat lain dari posisi sekarang), photo_path, receipt_path.
      * Mengembalikan false jika tidak ada yang berubah.
      */
-    public function mutateTo(array $to, ?string $reason = null, $date = null, ?int $by = null): bool
+    public function mutateTo(array $to, ?string $reason = null, $date = null, ?int $by = null, array $extra = []): bool
     {
         $blank = fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v);
 
@@ -118,33 +142,40 @@ class Asset extends Model
         $newUserId = $blank($to['user_id'] ?? null) !== null ? (int) $to['user_id'] : null;
         $newUserName = $newUserId ? null : $blank($to['user_name'] ?? null);
         $newUserLabel = $newUserId ? User::find($newUserId)?->name : $newUserName;
+        $newUserDept = $blank($to['user_department'] ?? null);
 
         $same = ($to['cabang'] ?? null) === $this->cabang
             && ($to['location'] ?? null) === $this->location
             && $newUserId === $this->user_id
-            && $newUserName === $this->user_name;
+            && $newUserName === $this->user_name
+            && $newUserDept === $this->user_department;
 
         if ($same) {
             return false;
         }
 
         $this->mutations()->create([
-            'mutated_at'    => $date ?? now()->toDateString(),
-            'from_cabang'   => $this->cabang,
-            'from_location' => $this->location,
-            'from_user'     => $this->holder_name,
-            'to_cabang'     => $to['cabang'] ?? null,
-            'to_location'   => $to['location'] ?? null,
-            'to_user'       => $newUserLabel,
-            'reason'        => $reason,
-            'created_by'    => $by,
+            'mutated_at'           => $date ?? now()->toDateString(),
+            'from_cabang'          => $blank($extra['from_cabang'] ?? null) ?? $this->cabang,
+            'from_location'        => $this->location,
+            'from_user'            => $this->holder_name,
+            'from_user_department' => $this->user_department,
+            'to_cabang'            => $to['cabang'] ?? null,
+            'to_location'          => $to['location'] ?? null,
+            'to_user'              => $newUserLabel,
+            'to_user_department'   => $newUserDept,
+            'reason'               => $reason,
+            'photo_path'           => $extra['photo_path'] ?? null,
+            'receipt_path'         => $extra['receipt_path'] ?? null,
+            'created_by'           => $by,
         ]);
 
         $this->update([
-            'cabang'    => $to['cabang'] ?? null,
-            'location'  => $to['location'] ?? null,
-            'user_id'   => $newUserId,
-            'user_name' => $newUserName,
+            'cabang'          => $to['cabang'] ?? null,
+            'location'        => $to['location'] ?? null,
+            'user_id'         => $newUserId,
+            'user_name'       => $newUserName,
+            'user_department' => $newUserDept,
         ]);
 
         return true;

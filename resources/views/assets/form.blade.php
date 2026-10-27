@@ -93,6 +93,40 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Departemen pengguna <span class="text-xs text-gray-400">(pemilik aset tetap {{ \App\Models\Asset::DEPARTMENTS[$field('department', 'IT')] ?? 'IT' }})</span></label>
+                    <input name="user_department" list="user-depts" value="{{ $field('user_department') }}" class="{{ $input }}" placeholder="contoh: Finance">
+                    <datalist id="user-depts">
+                        @foreach (\App\Models\Asset::DEPARTMENTS as $v)<option value="{{ $v }}">@endforeach
+                    </datalist>
+                </div>
+
+                <div class="md:col-span-2 border-t pt-4">
+                    <div class="text-sm font-semibold text-gray-800 mb-2">Spesifikasi</div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Processor</label>
+                            <input name="spec_cpu" value="{{ $field('spec_cpu') }}" class="{{ $input }}" placeholder="contoh: Core i5 gen 11">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">RAM</label>
+                            <input name="spec_ram" value="{{ $field('spec_ram') }}" class="{{ $input }}" placeholder="contoh: 8GB DDR4">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Penyimpanan</label>
+                            <input name="spec_storage" value="{{ $field('spec_storage') }}" class="{{ $input }}" placeholder="contoh: 512GB SSD">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Sistem operasi</label>
+                            <input name="spec_os" value="{{ $field('spec_os') }}" class="{{ $input }}" placeholder="contoh: Windows 11 Pro">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi lain</label>
+                            <textarea name="spec_other" rows="2" class="{{ $input }}" placeholder="contoh: layar 14 inci, GPU, port, kapasitas toner, dan sebagainya">{{ $field('spec_other') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang</label>
                     <select name="cabang" @required(!$editing) class="{{ $input }}">
                         <option value="">Pilih cabang</option>
@@ -135,6 +169,29 @@
                     <input type="file" name="photo" accept="image/*" class="text-sm">
                     @error('photo') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
+
+                @if (!$editing)
+                    <div class="md:col-span-2 border-t pt-4">
+                        <div class="text-sm font-semibold text-gray-800 mb-1">Dokumen <span class="text-xs font-normal text-gray-400">(opsional, bisa dilengkapi nanti di tab Dokumen)</span></div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Foto kode pada dus (JPG)</label>
+                                <input type="file" name="doc_box" accept=".jpg,.jpeg,image/jpeg" class="text-sm">
+                                @error('doc_box') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Foto serial number pada unit (JPG)</label>
+                                <input type="file" name="doc_serial" accept=".jpg,.jpeg,image/jpeg" class="text-sm">
+                                @error('doc_serial') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Tanda terima user (PDF)</label>
+                                <input type="file" name="doc_receipt" accept=".pdf,application/pdf" class="text-sm">
+                                @error('doc_receipt') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+                    </div>
+                @endif
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>

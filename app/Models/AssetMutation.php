@@ -9,6 +9,7 @@ class AssetMutation extends Model
     protected $fillable = [
         'asset_id', 'mutated_at', 'from_cabang', 'from_location', 'from_user',
         'to_cabang', 'to_location', 'to_user', 'reason', 'created_by',
+        'photo_path', 'receipt_path', 'from_user_department', 'to_user_department',
     ];
 
     protected $casts = ['mutated_at' => 'date'];

@@ -23,7 +23,7 @@
     $warrantyColor = match ($asset->warranty_state) {
         'habis' => 'text-red-600', 'segera' => 'text-amber-600', 'aktif' => 'text-emerald-600', default => 'text-gray-400',
     };
-    $startTab = session('tab', $errors->hasAny(['problem', 'repaired_at', 'parts.*']) ? 'perbaikan' : ($errors->hasAny(['reason', 'mutated_at']) ? 'mutasi' : 'tiket'));
+    $startTab = session('tab', $errors->hasAny(['problem', 'repaired_at', 'parts.*']) ? 'perbaikan' : ($errors->hasAny(['reason', 'mutated_at', 'photo', 'receipt']) ? 'mutasi' : 'tiket'));
 @endphp
 <x-app-layout>
     <style>[x-cloak] { display: none !important; }</style>
@@ -137,6 +137,7 @@
                                 'Cabang' => $asset->cabang,
                                 'Lokasi' => $asset->location,
                                 'Pengguna' => $asset->holder_name,
+                                'Departemen pengguna' => $asset->user_department,
                             ],
                         ];
                     @endphp
@@ -164,6 +165,16 @@
                     </div>
 
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Spesifikasi</div>
+                        <dl class="space-y-2.5 text-sm">
+                            @foreach (['Processor' => $asset->spec_cpu, 'RAM' => $asset->spec_ram, 'Penyimpanan' => $asset->spec_storage, 'Sistem operasi' => $asset->spec_os] as $label => $value)
+                                <div class="flex justify-between gap-4"><dt class="text-gray-500 shrink-0">{{ $label }}</dt><dd class="text-gray-900 text-right break-words min-w-0">{{ $value ?: '-' }}</dd></div>
+                            @endforeach
+                        </dl>
+                        @if ($asset->spec_other)<p class="mt-3 text-sm text-gray-700 whitespace-pre-line border-t pt-3">{{ $asset->spec_other }}</p>@endif
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Catatan</div>
                         <p class="text-sm text-gray-700 whitespace-pre-line">{{ $asset->notes ?: 'Tidak ada catatan.' }}</p>
                     </div>
@@ -180,7 +191,7 @@
             {{-- Riwayat --}}
             <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100" x-data="{ tab: @js($startTab) }">
                 <div class="border-b border-gray-100 px-3 sm:px-5 flex gap-1 overflow-x-auto">
-                    @foreach (['tiket' => ['Tiket', $asset->tickets->count()], 'perbaikan' => ['Perbaikan', $asset->repairs->count()], 'mutasi' => ['Mutasi', $asset->mutations->count()]] as $key => [$label, $count])
+                    @foreach (['tiket' => ['Tiket', $asset->tickets->count()], 'perbaikan' => ['Perbaikan', $asset->repairs->count()], 'mutasi' => ['Mutasi', $asset->mutations->count()], 'dokumen' => ['Dokumen', $asset->document_count.'/4']] as $key => [$label, $count])
                         <button type="button" @click="tab = '{{ $key }}'"
                             :class="tab === '{{ $key }}' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'"
                             class="px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap">
@@ -222,7 +233,7 @@
                 </div>
 
                 {{-- Tab Perbaikan --}}
-                <div x-show="tab === 'perbaikan'" x-cloak class="p-5" x-data="{ open: {{ $errors->hasAny(['problem', 'repaired_at', 'parts.*']) ? 'true' : 'false' }}, parts: [{ name: '', detail: '', qty: 1, cost: '' }] }">
+                <div x-show="tab === 'perbaikan'" x-cloak class="p-5" x-data="{ open: {{ $errors->hasAny(['problem', 'repaired_at', 'parts.*', 'photos.*']) ? 'true' : 'false' }}, parts: [{ name: '', detail: '', qty: 1, cost: '' }], ticket: @js((string) old('ticket_id')), ticketPhotos: @js($ticketPhotos) }">
                     <div class="flex items-center justify-between gap-3 mb-4">
                         <div class="text-sm text-gray-500">
                             @if ($repairTotal > 0) Total biaya perbaikan <strong class="text-gray-900">{{ $fmt($repairTotal) }}</strong> @else Belum ada biaya tercatat @endif
@@ -230,7 +241,7 @@
                         <button type="button" @click="open = !open" class="px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-500 text-sm font-medium shrink-0" x-text="open ? 'Tutup' : 'Catat Perbaikan'"></button>
                     </div>
 
-                <form x-show="open" x-cloak method="POST" action="{{ route('assets.repairs.store', $asset) }}"
+                <form x-show="open" x-cloak method="POST" enctype="multipart/form-data" action="{{ route('assets.repairs.store', $asset) }}"
                       class="border rounded-lg p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50">
                     @csrf
                     <div>
@@ -239,7 +250,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Terkait tiket (opsional)</label>
-                        <select name="ticket_id" class="{{ $input }}">
+                        <select name="ticket_id" x-model="ticket" class="{{ $input }}">
                             <option value="">- Tidak ada -</option>
                             @foreach ($asset->tickets as $t)
                                 <option value="{{ $t->id }}" @selected((string) old('ticket_id') === (string) $t->id)>#{{ str_pad($t->id, 3, '0', STR_PAD_LEFT) }} - {{ \Illuminate\Support\Str::limit($t->title, 50) }}</option>
@@ -267,6 +278,26 @@
                                 <option value="{{ $k }}">{{ $v }}</option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Foto alasan perbaikan (JPG, maks. 10 foto)</label>
+                        <input type="file" name="photos[]" multiple accept=".jpg,.jpeg,image/jpeg" class="text-sm">
+                        @error('photos.*') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        <template x-if="ticket && ticketPhotos[ticket] && ticketPhotos[ticket].length">
+                            <div class="mt-2">
+                                <div class="text-xs text-gray-500 mb-1">Atau pakai foto dari lampiran tiket (claim):</div>
+                                <div class="flex flex-wrap gap-3">
+                                    <template x-for="f in ticketPhotos[ticket]" :key="f.id">
+                                        <label class="flex items-center gap-2 text-xs text-gray-700">
+                                            <input type="checkbox" name="ticket_photos[]" :value="f.id" class="rounded">
+                                            <img :src="f.url" class="h-12 w-12 object-cover rounded border" alt="">
+                                            <span x-text="f.name"></span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
                     </div>
 
                     <div class="md:col-span-2">
@@ -303,6 +334,13 @@
                                     </div>
                                     <div class="mt-2 text-gray-700"><span class="text-gray-500">Masalah:</span> {{ $r->problem }}</div>
                                     @if ($r->action)<div class="mt-1 text-gray-700"><span class="text-gray-500">Tindakan:</span> {{ $r->action }}</div>@endif
+                                    @if ($r->photos->isNotEmpty())
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            @foreach ($r->photos as $ph)
+                                                <a href="{{ route('assets.repair-photos.show', $ph) }}" target="_blank"><img src="{{ route('assets.repair-photos.show', $ph) }}" alt="{{ $ph->original_name }}" class="h-16 w-16 object-cover rounded-lg ring-1 ring-gray-200"></a>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     @if ($r->parts->isNotEmpty())
                                         <div class="mt-3 overflow-x-auto">
                                             <table class="w-full text-xs">
@@ -338,18 +376,33 @@
                         <button type="button" @click="open = !open" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 text-sm font-medium shrink-0" x-text="open ? 'Tutup' : 'Mutasi Aset'"></button>
                     </div>
 
-                <form x-show="open" x-cloak method="POST" action="{{ route('assets.mutations.store', $asset) }}"
+                <form x-show="open" x-cloak method="POST" enctype="multipart/form-data" action="{{ route('assets.mutations.store', $asset) }}"
                       class="border rounded-lg p-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50">
                     @csrf
-                    <div class="md:col-span-2 text-xs text-gray-500">
-                        Saat ini: {{ $asset->cabang ?? '-' }} · {{ $asset->location ?? '-' }} · {{ $asset->holder_name ?? '-' }}. Ubah ke tujuan baru di bawah.
+                    <div class="md:col-span-2 text-xs text-gray-600 space-y-1">
+                        <div>Saat ini: {{ $asset->cabang ?? '-' }} · {{ $asset->location ?? '-' }} · {{ $asset->holder_name ?? '-' }}{{ $asset->user_department ? ' ('.$asset->user_department.')' : '' }}.</div>
+                        <div class="text-gray-500">Dipakai untuk serah terima ke user (lampirkan foto unit terbaru dan tanda terima) maupun perpindahan antar cabang. Aset yang baru diterima IT HO dipindahkan ke user tujuan lewat form ini.</div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Tanggal mutasi</label>
                         <input type="date" name="mutated_at" value="{{ old('mutated_at', now()->toDateString()) }}" required class="{{ $input }}">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Cabang tujuan</label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Alasan mutasi</label>
+                        <input name="reason" value="{{ old('reason') }}" required class="{{ $input }}" placeholder="mis. Serah terima ke user baru">
+                        @error('reason') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Dari cabang</label>
+                        <select name="from_cabang" class="{{ $input }}">
+                            <option value="">-</option>
+                            @foreach (\App\Models\Asset::CABANG as $c)
+                                <option value="{{ $c }}" @selected(old('from_cabang', $asset->cabang) === $c)>{{ $c }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Ke cabang</label>
                         <select name="cabang" class="{{ $input }}">
                             <option value="">-</option>
                             @foreach (\App\Models\Asset::CABANG as $c)
@@ -362,7 +415,7 @@
                         <input name="location" value="{{ old('location', $asset->location) }}" class="{{ $input }}">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Pengguna baru</label>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Pengguna baru (akun)</label>
                         <select name="user_id" class="{{ $input }}">
                             <option value="">- Pilih user -</option>
                             @foreach ($users as $u)
@@ -375,15 +428,26 @@
                         <input name="user_name" value="{{ old('user_name', $asset->user_name) }}" class="{{ $input }}" placeholder="mis. Ruang Meeting">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Alasan mutasi</label>
-                        <input name="reason" value="{{ old('reason') }}" required class="{{ $input }}" placeholder="mis. Karyawan pindah divisi">
-                        @error('reason') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Departemen pengguna <span class="text-gray-400">(pemilik aset tetap {{ $asset->department_name ?? 'IT' }})</span></label>
+                        <input name="user_department" list="mut-depts" value="{{ old('user_department', $asset->user_department) }}" class="{{ $input }}" placeholder="mis. Finance">
+                        <datalist id="mut-depts">
+                            @foreach (\App\Models\Asset::DEPARTMENTS as $v)<option value="{{ $v }}">@endforeach
+                        </datalist>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Foto unit terbaru (JPG)</label>
+                        <input type="file" name="photo" accept=".jpg,.jpeg,image/jpeg" class="text-sm">
+                        @error('photo') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Tanda terima user (PDF)</label>
+                        <input type="file" name="receipt" accept=".pdf,application/pdf" class="text-sm">
+                        @error('receipt') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                     </div>
                     <div class="md:col-span-2 flex justify-end">
                         <button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm">Simpan Mutasi</button>
                     </div>
                 </form>
-
 
                     <ol class="relative border-l border-gray-200 ml-2 space-y-5">
                         @forelse ($asset->mutations as $mu)
@@ -398,22 +462,77 @@
                                         <div class="rounded-lg bg-gray-50 px-3 py-2">
                                             <div class="text-xs text-gray-500">Dari</div>
                                             <div class="text-gray-800">{{ $mu->from_cabang ?? '-' }} · {{ $mu->from_location ?? '-' }}</div>
-                                            <div class="text-gray-600 text-xs">{{ $mu->from_user ?? '-' }}</div>
+                                            <div class="text-gray-600 text-xs">{{ $mu->from_user ?? '-' }}{{ $mu->from_user_department ? ' ('.$mu->from_user_department.')' : '' }}</div>
                                         </div>
                                         <div class="text-gray-400 text-center">&rarr;</div>
                                         <div class="rounded-lg bg-indigo-50 px-3 py-2">
                                             <div class="text-xs text-indigo-600">Ke</div>
                                             <div class="text-gray-800">{{ $mu->to_cabang ?? '-' }} · {{ $mu->to_location ?? '-' }}</div>
-                                            <div class="text-gray-600 text-xs">{{ $mu->to_user ?? '-' }}</div>
+                                            <div class="text-gray-600 text-xs">{{ $mu->to_user ?? '-' }}{{ $mu->to_user_department ? ' ('.$mu->to_user_department.')' : '' }}</div>
                                         </div>
                                     </div>
                                     @if ($mu->reason)<div class="mt-2 text-gray-700"><span class="text-gray-500">Alasan:</span> {{ $mu->reason }}</div>@endif
+                                    <div class="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                                        @if ($mu->photo_path)
+                                            <a href="{{ route('assets.mutations.file', [$mu, 'photo']) }}" target="_blank"><img src="{{ route('assets.mutations.file', [$mu, 'photo']) }}" alt="Foto unit" class="h-16 w-16 object-cover rounded-lg ring-1 ring-gray-200"></a>
+                                        @endif
+                                        @if ($mu->receipt_path)
+                                            <a href="{{ route('assets.mutations.file', [$mu, 'receipt']) }}" target="_blank" class="text-blue-600 hover:underline">Tanda terima (PDF)</a>
+                                        @elseif ($mu->to_user)
+                                            <span class="rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200 px-2 py-0.5">Tanda terima belum dilampirkan</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </li>
                         @empty
                             <li class="ml-5 text-sm text-gray-500 py-4">Belum ada mutasi.</li>
                         @endforelse
                     </ol>
+                </div>
+
+                {{-- Tab Dokumen --}}
+                <div x-show="tab === 'dokumen'" x-cloak class="p-5">
+                    <p class="text-sm text-gray-500 mb-4">Empat dokumen untuk setiap aset: foto aset, foto kode pada dus, foto serial number pada unit, dan tanda terima user. Dokumen disimpan privat dan hanya bisa dibuka tim IT.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="rounded-xl ring-1 ring-gray-200 p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="font-medium text-gray-900 text-sm">Foto aset</div>
+                                <span class="text-xs rounded-full px-2 py-0.5 ring-1 {{ $asset->photo_path ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-amber-200' }}">{{ $asset->photo_path ? 'Ada' : 'Belum ada' }}</span>
+                            </div>
+                            @if ($asset->photo_url)<a href="{{ $asset->photo_url }}" target="_blank"><img src="{{ $asset->photo_url }}" alt="" class="mt-3 h-32 rounded-lg object-cover ring-1 ring-gray-200"></a>@endif
+                            <a href="{{ route('assets.edit', $asset) }}" class="inline-block mt-3 text-sm text-blue-600 hover:underline">Ganti lewat Edit</a>
+                        </div>
+
+                        @foreach (\App\Models\Asset::DOCUMENT_TYPES as $type => $label)
+                            @php $doc = $asset->document($type); @endphp
+                            <div class="rounded-xl ring-1 ring-gray-200 p-4">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="font-medium text-gray-900 text-sm">{{ $label }}</div>
+                                    <span class="text-xs rounded-full px-2 py-0.5 ring-1 shrink-0 {{ $doc ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-amber-200' }}">{{ $doc ? 'Ada' : 'Belum ada' }}</span>
+                                </div>
+                                @if ($doc)
+                                    @if ($doc->isImage())
+                                        <a href="{{ route('assets.documents.show', $doc) }}" target="_blank"><img src="{{ route('assets.documents.show', $doc) }}" alt="" class="mt-3 h-32 rounded-lg object-cover ring-1 ring-gray-200"></a>
+                                    @else
+                                        <a href="{{ route('assets.documents.show', $doc) }}" target="_blank" class="inline-block mt-3 text-sm text-blue-600 hover:underline">{{ $doc->original_name }}</a>
+                                    @endif
+                                    <div class="text-xs text-gray-400 mt-1">{{ $doc->created_at->format('d M Y H:i') }}</div>
+                                @endif
+                                <form method="POST" enctype="multipart/form-data" action="{{ route('assets.documents.store', [$asset, $type]) }}" class="mt-3 flex flex-wrap items-center gap-2">
+                                    @csrf
+                                    <input type="file" name="file" required accept="{{ $type === 'receipt' ? '.pdf,application/pdf' : '.jpg,.jpeg,image/jpeg' }}" class="text-xs min-w-0 max-w-full">
+                                    <button class="px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-xs">{{ $doc ? 'Ganti' : 'Unggah' }}</button>
+                                </form>
+                                @error('file') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                                @if ($doc)
+                                    <form method="POST" action="{{ route('assets.documents.destroy', $doc) }}" class="mt-2" onsubmit="return confirm('Hapus dokumen ini?')">
+                                        @csrf @method('DELETE')
+                                        <button class="text-xs text-red-600 hover:underline">Hapus</button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>

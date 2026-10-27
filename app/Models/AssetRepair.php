@@ -15,6 +15,11 @@ class AssetRepair extends Model
         return $this->belongsTo(Asset::class);
     }
 
+    public function photos()
+    {
+        return $this->hasMany(AssetRepairPhoto::class);
+    }
+
     public function parts()
     {
         return $this->hasMany(AssetRepairPart::class);

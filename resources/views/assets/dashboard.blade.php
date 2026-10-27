@@ -118,7 +118,7 @@
                 <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                     <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Kelengkapan data</div>
                     <div class="space-y-2.5 text-sm">
-                        @foreach (['Tanpa pemegang' => $noHolder, 'Tanpa foto' => $noPhoto, 'Tanpa departemen' => $noDepartment, 'Tanpa No. Aset Accurate' => $noAccurate] as $label => $n)
+                        @foreach (['Tanpa pemegang' => $noHolder, 'Tanpa foto' => $noPhoto, 'Tanpa departemen' => $noDepartment, 'Tanpa No. Aset Accurate' => $noAccurate, 'Dokumen belum lengkap (dari 4)' => $docIncomplete] as $label => $n)
                             <div class="flex justify-between">
                                 <span class="text-gray-700">{{ $label }}</span>
                                 <span class="font-medium {{ $n ? 'text-amber-600' : 'text-emerald-600' }}">{{ $n }}</span>

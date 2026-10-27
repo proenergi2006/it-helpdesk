@@ -124,6 +124,11 @@ Route::middleware(['auth', 'role:it'])->group(function () {
     Route::post('/assets/audits/{audit}/close', [\App\Http\Controllers\AssetAuditController::class, 'close'])->name('assets.audits.close');
     Route::get('/assets/reconcile', [\App\Http\Controllers\AssetController::class, 'reconcileForm'])->name('assets.reconcile');
     Route::post('/assets/reconcile', [\App\Http\Controllers\AssetController::class, 'reconcile'])->name('assets.reconcile.run');
+    Route::post('/assets/{asset}/documents/{type}', [\App\Http\Controllers\AssetController::class, 'storeDocument'])->name('assets.documents.store');
+    Route::get('/assets/documents/{document}', [\App\Http\Controllers\AssetController::class, 'showDocument'])->name('assets.documents.show');
+    Route::delete('/assets/documents/{document}', [\App\Http\Controllers\AssetController::class, 'destroyDocument'])->name('assets.documents.destroy');
+    Route::get('/assets/mutations/{mutation}/{kind}', [\App\Http\Controllers\AssetController::class, 'mutationFile'])->name('assets.mutations.file');
+    Route::get('/assets/repair-photos/{photo}', [\App\Http\Controllers\AssetController::class, 'repairPhoto'])->name('assets.repair-photos.show');
     Route::post('/assets/{asset}/repairs', [\App\Http\Controllers\AssetController::class, 'storeRepair'])->name('assets.repairs.store');
     Route::post('/assets/{asset}/mutations', [\App\Http\Controllers\AssetController::class, 'mutate'])->name('assets.mutations.store');
     Route::resource('assets', \App\Http\Controllers\AssetController::class);

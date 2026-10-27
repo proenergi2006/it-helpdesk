@@ -21,7 +21,7 @@
                 <div class="p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">{{ session('error') }}</div>
             @endif
 
-            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-6 gap-3">
+            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-7 gap-3">
                 <input name="q" value="{{ request('q') }}" placeholder="Cari kode, no. Accurate, nama, serial, pengguna..."
                        class="rounded-lg border-gray-300 md:col-span-2">
                 <select name="type" class="rounded-lg border-gray-300">
@@ -30,8 +30,13 @@
                         <option value="{{ $t }}" @selected(request('type') === $t)>{{ $t }}</option>
                     @endforeach
                 </select>
+                <select name="sort" class="rounded-lg border-gray-300">
+                    <option value="">Terbaru ditambahkan</option>
+                    <option value="purchase_asc" @selected(request('sort') === 'purchase_asc')>Beli terlama dulu</option>
+                    <option value="purchase_desc" @selected(request('sort') === 'purchase_desc')>Beli terbaru dulu</option>
+                </select>
                 <select name="department" class="rounded-lg border-gray-300">
-                    <option value="">Semua departemen</option>
+                    <option value="">Semua dept.</option>
                     @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
                         <option value="{{ $k }}" @selected(request('department') === $k)>{{ $v }}</option>
                     @endforeach
@@ -68,6 +73,7 @@
                                 <th class="text-left px-4 py-3">Kode</th>
                                 <th class="text-left px-4 py-3">Nama</th>
                                 <th class="text-left px-4 py-3">Jenis</th>
+                                <th class="text-left px-4 py-3">Tgl. Beli</th>
                                 <th class="text-left px-4 py-3">Cabang</th>
                                 <th class="text-left px-4 py-3">Pengguna</th>
                                 <th class="text-left px-4 py-3">Status</th>
@@ -95,6 +101,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3">{{ $a->type }}</td>
+                                    <td class="px-4 py-3 whitespace-nowrap">{{ $a->purchase_date?->format('d M Y') ?? '-' }}</td>
                                     <td class="px-4 py-3">{{ $a->cabang ?? '-' }}</td>
                                     <td class="px-4 py-3">{{ $a->holder_name ?? '-' }}</td>
                                     <td class="px-4 py-3">
@@ -121,7 +128,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="10" class="px-4 py-10 text-center text-gray-500">Belum ada aset. Tambahkan satu per satu atau gunakan Import.</td></tr>
+                                <tr><td colspan="11" class="px-4 py-10 text-center text-gray-500">Belum ada aset. Tambahkan satu per satu atau gunakan Import.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

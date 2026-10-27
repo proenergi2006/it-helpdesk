@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Asset;
+use App\Models\AssetDocument;
+use App\Models\AssetMutation;
+use App\Models\AssetRepairPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -15,7 +18,8 @@ class AssetController extends Controller
 {
     private const IMPORT_HEADERS = [
         'no_aset_accurate', 'departemen', 'nama', 'jenis', 'merk', 'model', 'serial_number', 'cabang', 'lokasi',
-        'pengguna', 'status', 'tanggal_beli', 'garansi_sampai', 'catatan',
+        'pengguna', 'departemen_pengguna', 'status', 'tanggal_beli', 'garansi_sampai',
+        'processor', 'ram', 'storage', 'os', 'spesifikasi_lain', 'catatan',
     ];
 
     public function index(Request $request)
@@ -39,7 +43,12 @@ class AssetController extends Controller
             }
         }
 
-        $assets = $q->paginate(20)->withQueryString();
+        $sort = $request->input('sort');
+        if (in_array($sort, ['purchase_asc', 'purchase_desc'], true)) {
+            $q->reorder()->orderByRaw('purchase_date is null')->orderBy('purchase_date', $sort === 'purchase_asc' ? 'asc' : 'desc')->orderBy('id');
+        }
+
+        $assets = $q->with('documents')->paginate(20)->withQueryString();
 
         return view('assets.index', compact('assets'));
     }
@@ -85,6 +94,8 @@ class AssetController extends Controller
             'noPhoto'          => $live()->whereNull('photo_path')->count(),
             'noDepartment'     => $live()->whereNull('department')->count(),
             'noAccurate'       => $live()->whereNull('accurate_no')->count(),
+            'docIncomplete'    => $live()->where(fn ($q) => $q->whereNull('photo_path')
+                ->orWhereRaw('(select count(*) from asset_documents d where d.asset_id = assets.id) < 3'))->count(),
         ];
 
         return view('assets.dashboard', $data);
@@ -98,10 +109,15 @@ class AssetController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['doc_box'], $data['doc_serial'], $data['doc_receipt']);
 
         $asset = Asset::create($data + ['created_by' => Auth::id()]);
         $this->savePhoto($request, $asset);
+        foreach (['box' => 'doc_box', 'serial' => 'doc_serial', 'receipt' => 'doc_receipt'] as $type => $field) {
+            if ($request->hasFile($field)) {
+                $this->saveDocument($asset, $type, $request->file($field));
+            }
+        }
 
         return redirect()->route('assets.show', $asset)->with('success', 'Aset berhasil ditambahkan.');
     }
@@ -111,15 +127,23 @@ class AssetController extends Controller
         $asset->load([
             'user',
             'tickets' => fn ($q) => $q->with('takenByUser')->limit(50),
-            'repairs.parts', 'repairs.creator', 'repairs.ticket',
-            'mutations.creator',
+            'repairs.parts', 'repairs.creator', 'repairs.ticket', 'repairs.photos',
+            'mutations.creator', 'documents',
         ]);
 
         $users = $this->users();
 
         $openAudit = \App\Models\AssetAudit::current();
 
-        return view('assets.show', compact('asset', 'users', 'openAudit'));
+        // lampiran tiket (foto) yang bisa dipakai sebagai foto alasan perbaikan
+        $ticketPhotos = \Illuminate\Support\Facades\DB::table('ticket_attachments')
+            ->whereIn('ticket_id', $asset->tickets->pluck('id'))
+            ->get(['id', 'ticket_id', 'file_name', 'file_path'])
+            ->filter(fn ($f) => preg_match('/\.(jpe?g|png)$/i', $f->file_name))
+            ->groupBy('ticket_id')
+            ->map(fn ($rows) => $rows->map(fn ($f) => ['id' => $f->id, 'name' => $f->file_name, 'url' => asset('storage/'.$f->file_path)])->values());
+
+        return view('assets.show', compact('asset', 'users', 'openAudit', 'ticketPhotos'));
     }
 
     public function edit(Asset $asset)
@@ -130,15 +154,16 @@ class AssetController extends Controller
     public function update(Request $request, Asset $asset)
     {
         $data = $this->validated($request, $asset);
-        unset($data['photo'], $data['remove_photo']);
+        unset($data['photo'], $data['remove_photo'], $data['doc_box'], $data['doc_serial'], $data['doc_receipt']);
 
         $location = [
-            'cabang'    => $data['cabang'] ?? null,
-            'location'  => $data['location'] ?? null,
-            'user_id'   => $data['user_id'] ?? null,
-            'user_name' => $data['user_name'] ?? null,
+            'cabang'          => $data['cabang'] ?? null,
+            'location'        => $data['location'] ?? null,
+            'user_id'         => $data['user_id'] ?? null,
+            'user_name'       => $data['user_name'] ?? null,
+            'user_department' => $data['user_department'] ?? null,
         ];
-        unset($data['cabang'], $data['location'], $data['user_id'], $data['user_name']);
+        unset($data['cabang'], $data['location'], $data['user_id'], $data['user_name'], $data['user_department']);
 
         $asset->update($data);
         $asset->mutateTo($location, 'Perubahan lewat edit data aset', null, Auth::id());
@@ -201,7 +226,7 @@ class AssetController extends Controller
         $ws = $sheet->getActiveSheet();
         $ws->fromArray([
             self::IMPORT_HEADERS,
-            ['FA-00123', 'IT', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'aktif', '2024-03-15', '2027-03-15', ''],
+            ['FA-00123', 'IT', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'Finance', 'aktif', '2024-03-15', '2027-03-15', 'Core i5 gen 11', '8GB', '512GB SSD', 'Windows 11', '', ''],
         ]);
 
         return response()->streamDownload(function () use ($sheet) {
@@ -275,6 +300,12 @@ class AssetController extends Controller
                 'purchase_date'  => $this->parseDate($data['tanggal_beli'] ?? ''),
                 'warranty_until' => $this->parseDate($data['garansi_sampai'] ?? ''),
                 'notes'          => ($data['catatan'] ?? '') ?: null,
+                'user_department' => ($data['departemen_pengguna'] ?? '') ?: null,
+                'spec_cpu'       => ($data['processor'] ?? '') ?: null,
+                'spec_ram'       => ($data['ram'] ?? '') ?: null,
+                'spec_storage'   => ($data['storage'] ?? '') ?: null,
+                'spec_os'        => ($data['os'] ?? '') ?: null,
+                'spec_other'     => ($data['spesifikasi_lain'] ?? '') ?: null,
             ];
 
             $dept = strtoupper($data['departemen'] ?? '');
@@ -367,6 +398,10 @@ class AssetController extends Controller
             'vendor'         => ['nullable', 'string', 'max:150'],
             'ticket_id'      => ['nullable', 'integer', Rule::exists('tickets', 'id')->where('asset_id', $asset->id)],
             'status_after'   => ['nullable', Rule::in(array_keys(Asset::STATUSES))],
+            'photos'         => ['nullable', 'array', 'max:10'],
+            'photos.*'       => ['file', 'mimes:jpg,jpeg', 'max:5120'],
+            'ticket_photos'  => ['nullable', 'array'],
+            'ticket_photos.*' => ['integer'],
             'parts'          => ['nullable', 'array'],
             'parts.*.name'   => ['nullable', 'string', 'max:255'],
             'parts.*.detail' => ['nullable', 'string', 'max:255'],
@@ -396,6 +431,28 @@ class AssetController extends Controller
             ]);
         }
 
+        foreach ($request->file('photos', []) as $photo) {
+            $repair->photos()->create([
+                'path'          => $photo->store("asset-repairs/{$repair->id}", 'local'),
+                'original_name' => $photo->getClientOriginalName(),
+            ]);
+        }
+
+        // foto dari lampiran tiket (claim) yang terhubung ke aset ini
+        if (!empty($data['ticket_photos']) && !empty($data['ticket_id'])) {
+            $files = \Illuminate\Support\Facades\DB::table('ticket_attachments')
+                ->where('ticket_id', $data['ticket_id'])->whereIn('id', $data['ticket_photos'])->get();
+            foreach ($files as $f) {
+                $public = \Illuminate\Support\Facades\Storage::disk('public');
+                if (!$public->exists($f->file_path)) {
+                    continue;
+                }
+                $dest = "asset-repairs/{$repair->id}/".uniqid().'-'.basename($f->file_path);
+                \Illuminate\Support\Facades\Storage::disk('local')->put($dest, $public->get($f->file_path));
+                $repair->photos()->create(['path' => $dest, 'original_name' => $f->file_name]);
+            }
+        }
+
         if (!empty($data['status_after'])) {
             $asset->update(['status' => $data['status_after']]);
         }
@@ -406,20 +463,104 @@ class AssetController extends Controller
     public function mutate(Request $request, Asset $asset)
     {
         $data = $request->validate([
-            'mutated_at' => ['required', 'date'],
-            'cabang'     => ['nullable', 'string', 'max:50'],
-            'location'   => ['nullable', 'string', 'max:150'],
-            'user_id'    => ['nullable', 'integer', 'exists:users,id'],
-            'user_name'  => ['nullable', 'string', 'max:150'],
-            'reason'     => ['required', 'string', 'max:500'],
+            'mutated_at'      => ['required', 'date'],
+            'from_cabang'     => ['nullable', 'string', 'max:50'],
+            'cabang'          => ['nullable', 'string', 'max:50'],
+            'location'        => ['nullable', 'string', 'max:150'],
+            'user_id'         => ['nullable', 'integer', 'exists:users,id'],
+            'user_name'       => ['nullable', 'string', 'max:150'],
+            'user_department' => ['nullable', 'string', 'max:150'],
+            'reason'          => ['required', 'string', 'max:500'],
+            'photo'           => ['nullable', 'file', 'mimes:jpg,jpeg', 'max:5120'],
+            'receipt'         => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
+        ], [
+            'photo.mimes'   => 'Foto unit harus berformat JPG.',
+            'receipt.mimes' => 'Tanda terima harus berformat PDF.',
         ]);
 
-        $changed = $asset->mutateTo($data, $data['reason'], $data['mutated_at'], Auth::id());
+        $extra = ['from_cabang' => $data['from_cabang'] ?? null];
+        if ($request->hasFile('photo')) {
+            $extra['photo_path'] = $request->file('photo')->store("asset-mutations/{$asset->id}", 'local');
+        }
+        if ($request->hasFile('receipt')) {
+            $extra['receipt_path'] = $request->file('receipt')->store("asset-mutations/{$asset->id}", 'local');
+        }
+
+        $changed = $asset->mutateTo($data, $data['reason'], $data['mutated_at'], Auth::id(), $extra);
+
+        if (!$changed) {
+            foreach (['photo_path', 'receipt_path'] as $k) {
+                if (!empty($extra[$k])) {
+                    \Illuminate\Support\Facades\Storage::disk('local')->delete($extra[$k]);
+                }
+            }
+        }
 
         return redirect()->route('assets.show', $asset)->with([
-            ($changed ? 'success' : 'error') => $changed ? 'Mutasi aset berhasil dicatat.' : 'Tidak ada perubahan lokasi atau pengguna.',
+            ($changed ? 'success' : 'error') => $changed ? 'Mutasi aset berhasil dicatat.' : 'Tidak ada perubahan lokasi, pengguna, atau departemen pengguna.',
             'tab' => 'mutasi',
         ]);
+    }
+
+    public function storeDocument(Request $request, Asset $asset, string $type)
+    {
+        abort_unless(array_key_exists($type, Asset::DOCUMENT_TYPES), 404);
+
+        $request->validate(
+            ['file' => ['required', 'file', 'mimes:'.($type === 'receipt' ? 'pdf' : 'jpg,jpeg'), 'max:'.($type === 'receipt' ? 10240 : 5120)]],
+            ['file.mimes' => $type === 'receipt' ? 'Tanda terima harus berformat PDF.' : 'Foto harus berformat JPG.']
+        );
+
+        $this->saveDocument($asset, $type, $request->file('file'));
+
+        return redirect()->route('assets.show', $asset)->with(['success' => 'Dokumen disimpan.', 'tab' => 'dokumen']);
+    }
+
+    public function destroyDocument(AssetDocument $document)
+    {
+        $asset = $document->asset;
+        \Illuminate\Support\Facades\Storage::disk('local')->delete($document->path);
+        $document->delete();
+
+        return redirect()->route('assets.show', $asset)->with(['success' => 'Dokumen dihapus.', 'tab' => 'dokumen']);
+    }
+
+    public function showDocument(AssetDocument $document)
+    {
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($document->path, $document->original_name);
+    }
+
+    public function mutationFile(AssetMutation $mutation, string $kind)
+    {
+        $path = match ($kind) {
+            'photo'   => $mutation->photo_path,
+            'receipt' => $mutation->receipt_path,
+            default   => null,
+        };
+        abort_unless($path, 404);
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($path);
+    }
+
+    public function repairPhoto(AssetRepairPhoto $photo)
+    {
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($photo->path, $photo->original_name);
+    }
+
+    private function saveDocument(Asset $asset, string $type, \Illuminate\Http\UploadedFile $file): void
+    {
+        $existing = $asset->documents()->where('type', $type)->first();
+        if ($existing) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete($existing->path);
+        }
+
+        $asset->documents()->updateOrCreate(['type' => $type], [
+            'path'          => $file->store("asset-documents/{$asset->id}", 'local'),
+            'original_name' => $file->getClientOriginalName(),
+            'mime'          => $file->getMimeType(),
+            'uploaded_by'   => Auth::id(),
+        ]);
+        $asset->unsetRelation('documents');
     }
 
     private function savePhoto(Request $request, Asset $asset): void
@@ -493,12 +634,24 @@ class AssetController extends Controller
             'purchase_date'  => ['nullable', 'date'],
             'warranty_until' => ['nullable', 'date', 'after_or_equal:purchase_date'],
             'notes'          => ['nullable', 'string'],
+            'spec_cpu'       => ['nullable', 'string', 'max:150'],
+            'spec_ram'       => ['nullable', 'string', 'max:150'],
+            'spec_storage'   => ['nullable', 'string', 'max:150'],
+            'spec_os'        => ['nullable', 'string', 'max:150'],
+            'spec_other'     => ['nullable', 'string', 'max:2000'],
+            'user_department' => ['nullable', 'string', 'max:150'],
+            'doc_box'        => ['nullable', 'file', 'mimes:jpg,jpeg', 'max:5120'],
+            'doc_serial'     => ['nullable', 'file', 'mimes:jpg,jpeg', 'max:5120'],
+            'doc_receipt'    => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
             'photo'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'remove_photo'   => ['nullable', 'boolean'],
         ], [
             'photo.image' => 'Foto harus berupa gambar.',
             'photo.mimes' => 'Foto harus berformat JPG, PNG, atau WEBP.',
             'photo.max'   => 'Ukuran foto maksimal 3 MB.',
+            'doc_box.mimes'     => 'Foto dus harus berformat JPG.',
+            'doc_serial.mimes'  => 'Foto serial number harus berformat JPG.',
+            'doc_receipt.mimes' => 'Tanda terima harus berformat PDF.',
         ]);
     }
 }
