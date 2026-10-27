@@ -111,6 +111,7 @@ Route::middleware('auth')->get('/assets/scan/{code}/ticket', [\App\Http\Controll
 
 // Khusus IT
 Route::middleware(['auth', 'role:it'])->group(function () {
+    Route::get('/assets/dashboard', [\App\Http\Controllers\AssetController::class, 'dashboard'])->name('assets.dashboard');
     Route::get('/assets/labels', [\App\Http\Controllers\AssetController::class, 'labels'])->name('assets.labels');
     Route::get('/assets/import', [\App\Http\Controllers\AssetController::class, 'importForm'])->name('assets.import');
     Route::post('/assets/import', [\App\Http\Controllers\AssetController::class, 'import'])->name('assets.import.store');

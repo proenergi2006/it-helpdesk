@@ -44,6 +44,52 @@ class AssetController extends Controller
         return view('assets.index', compact('assets'));
     }
 
+    public function dashboard()
+    {
+        $today = now()->startOfDay();
+        $live = fn () => Asset::query()->where('status', '!=', 'disposal');
+        $group = fn (string $col) => $live()->whereNotNull($col)->selectRaw("$col as label, count(*) as total")
+            ->groupBy($col)->orderByDesc('total')->pluck('total', 'label');
+
+        $repairCost = function ($from) {
+            return (float) \Illuminate\Support\Facades\DB::table('asset_repair_parts as p')
+                ->join('asset_repairs as r', 'r.id', '=', 'p.asset_repair_id')
+                ->where('r.repaired_at', '>=', $from)
+                ->sum(\Illuminate\Support\Facades\DB::raw('p.qty * coalesce(p.cost, 0)'));
+        };
+
+        $audit = \App\Models\AssetAudit::current();
+        $auditTotal = $audit?->assetsInScope()->count() ?? 0;
+        $auditDone = $audit ? $audit->assetsInScope()->whereIn('id', $audit->items()->pluck('asset_id'))->count() : 0;
+
+        $data = [
+            'total'        => Asset::count(),
+            'live'         => $live()->count(),
+            'byStatus'     => Asset::selectRaw('status as label, count(*) as total')->groupBy('status')->pluck('total', 'label'),
+            'byType'       => $group('type'),
+            'byCabang'     => $group('cabang'),
+            'byDepartment' => $group('department'),
+            'warrantyExpired'  => $live()->whereNotNull('warranty_until')->where('warranty_until', '<', $today)->count(),
+            'warrantySoon'     => $live()->whereBetween('warranty_until', [$today, $today->copy()->addDays(60)])->orderBy('warranty_until')->limit(8)->get(),
+            'repairsMonth'     => \App\Models\AssetRepair::where('repaired_at', '>=', now()->startOfMonth())->count(),
+            'costMonth'        => $repairCost(now()->startOfMonth()),
+            'costYear'         => $repairCost(now()->startOfYear()),
+            'topRepaired'      => Asset::withCount('repairs')->having('repairs_count', '>', 0)->orderByDesc('repairs_count')->limit(5)->get(),
+            'recentRepairs'    => \App\Models\AssetRepair::with('asset')->latest('repaired_at')->latest('id')->limit(5)->get(),
+            'recentMutations'  => \App\Models\AssetMutation::with('asset')->latest('mutated_at')->latest('id')->limit(5)->get(),
+            'openTickets'      => \App\Models\Ticket::whereNotNull('asset_id')->whereIn('status', ['open', 'in_progress'])->count(),
+            'audit'            => $audit,
+            'auditTotal'       => $auditTotal,
+            'auditDone'        => $auditDone,
+            'noHolder'         => $live()->whereNull('user_id')->whereNull('user_name')->count(),
+            'noPhoto'          => $live()->whereNull('photo_path')->count(),
+            'noDepartment'     => $live()->whereNull('department')->count(),
+            'noAccurate'       => $live()->whereNull('accurate_no')->count(),
+        ];
+
+        return view('assets.dashboard', $data);
+    }
+
     public function create()
     {
         return view('assets.form', ['asset' => new Asset(['status' => 'aktif']), 'users' => $this->users()]);

@@ -36,7 +36,7 @@
                         @endif
 
                         @if (Auth::check() && Auth::user()->role === 'it')
-                            <a href="{{ route('assets.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('assets.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Aset</a>
+                            <a href="{{ route('assets.dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('assets.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Aset</a>
                         @endif
 
                         <a href="{{ route('trend') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('trend') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Trend</a>
@@ -205,7 +205,7 @@
                 @endif
 
                 @if (Auth::check() && Auth::user()->role === 'it')
-                    <a href="{{ route('assets.index') }}"
+                    <a href="{{ route('assets.dashboard') }}"
                        class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
                         Aset
                     </a>

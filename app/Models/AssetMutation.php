@@ -13,6 +13,11 @@ class AssetMutation extends Model
 
     protected $casts = ['mutated_at' => 'date'];
 
+    public function asset()
+    {
+        return $this->belongsTo(Asset::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
