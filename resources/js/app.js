@@ -1,4 +1,5 @@
 import './bootstrap';
+import './image-compress';
 
 import Alpine from 'alpinejs';
 import Swal from 'sweetalert2';
