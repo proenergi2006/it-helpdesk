@@ -24,7 +24,12 @@
                     <li>Format file: .xlsx, .xls, atau .csv (maksimal 5 MB).</li>
                 </ol>
 
-                <a href="{{ route('assets.import.template') }}" class="inline-block px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Unduh Template</a>
+                <div class="flex flex-wrap gap-2">
+                    @unless (\App\Models\Asset::restrictedDepartment())
+                        <a href="{{ route('assets.import.template') }}" class="inline-block px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Unduh Template IT</a>
+                    @endunless
+                    <a href="{{ route('assets.import.template', ['format' => 'ga']) }}" class="inline-block px-4 py-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-900 text-sm">Unduh Template GA / Logistik</a>
+                </div>
 
                 <form method="POST" action="{{ route('assets.import.store') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
                     @csrf

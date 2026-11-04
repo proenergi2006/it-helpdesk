@@ -265,8 +265,15 @@ class AssetController extends Controller
         return view('assets.import');
     }
 
-    public function importTemplate()
+    public function importTemplate(Request $request)
     {
+        // template GA / Logistik (format Master Asset): untuk user GA / Logistik, atau IT dengan ?format=ga
+        if ($request->input('format') === 'ga' || Asset::restrictedDepartment()) {
+            return response()->streamDownload(function () {
+                (new Xlsx(\App\Support\AssetGaTemplate::build()))->setPreCalculateFormulas(false)->save('php://output');
+            }, 'template-import-aset-GA.xlsx');
+        }
+
         $sheet = new Spreadsheet();
         $ws = $sheet->getActiveSheet();
         $ws->fromArray([
