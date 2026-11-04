@@ -20,6 +20,9 @@ class AssetController extends Controller
         'no_aset_accurate', 'departemen', 'nama', 'jenis', 'merk', 'model', 'serial_number', 'cabang', 'lokasi',
         'pengguna', 'departemen_pengguna', 'status', 'tanggal_beli', 'garansi_sampai',
         'processor', 'ram', 'storage', 'os', 'spesifikasi_lain', 'catatan',
+        // kolom format GA / Logistik (boleh dikosongkan untuk aset IT)
+        'subkategori', 'no_aset_lama', 'kelas', 'jumlah', 'harga_satuan', 'kondisi', 'status_ppn',
+        'tanggal_disposal', 'alasan_disposal', 'no_ba_disposal', 'nilai_disposal',
     ];
 
     public function index(Request $request)
@@ -33,6 +36,7 @@ class AssetController extends Controller
                 ->orWhere('legacy_code', 'like', $term)
                 ->orWhere('accurate_no', 'like', $term)
                 ->orWhere('name', 'like', $term)
+                ->orWhere('subcategory', 'like', $term)
                 ->orWhere('serial_number', 'like', $term)
                 ->orWhere('user_name', 'like', $term)
                 ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)));
@@ -63,6 +67,8 @@ class AssetController extends Controller
         $repairCost = function ($from) {
             return (float) \Illuminate\Support\Facades\DB::table('asset_repair_parts as p')
                 ->join('asset_repairs as r', 'r.id', '=', 'p.asset_repair_id')
+                ->join('assets as a', 'a.id', '=', 'r.asset_id')
+                ->when(Asset::restrictedDepartment(), fn ($q, $dept) => $q->where('a.department', $dept))
                 ->where('r.repaired_at', '>=', $from)
                 ->sum(\Illuminate\Support\Facades\DB::raw('p.qty * coalesce(p.cost, 0)'));
         };
@@ -80,13 +86,13 @@ class AssetController extends Controller
             'byDepartment' => $group('department'),
             'warrantyExpired'  => $live()->whereNotNull('warranty_until')->where('warranty_until', '<', $today)->count(),
             'warrantySoon'     => $live()->whereBetween('warranty_until', [$today, $today->copy()->addDays(60)])->orderBy('warranty_until')->limit(8)->get(),
-            'repairsMonth'     => \App\Models\AssetRepair::where('repaired_at', '>=', now()->startOfMonth())->count(),
+            'repairsMonth'     => \App\Models\AssetRepair::whereHas('asset')->where('repaired_at', '>=', now()->startOfMonth())->count(),
             'costMonth'        => $repairCost(now()->startOfMonth()),
             'costYear'         => $repairCost(now()->startOfYear()),
             'topRepaired'      => Asset::withCount('repairs')->having('repairs_count', '>', 0)->orderByDesc('repairs_count')->limit(5)->get(),
-            'recentRepairs'    => \App\Models\AssetRepair::with('asset')->latest('repaired_at')->latest('id')->limit(5)->get(),
-            'recentMutations'  => \App\Models\AssetMutation::with('asset')->latest('mutated_at')->latest('id')->limit(5)->get(),
-            'openTickets'      => \App\Models\Ticket::whereNotNull('asset_id')->whereIn('status', ['open', 'in_progress'])->count(),
+            'recentRepairs'    => \App\Models\AssetRepair::whereHas('asset')->with('asset')->latest('repaired_at')->latest('id')->limit(5)->get(),
+            'recentMutations'  => \App\Models\AssetMutation::whereHas('asset')->with('asset')->latest('mutated_at')->latest('id')->limit(5)->get(),
+            'openTickets'      => \App\Models\Ticket::whereIn('asset_id', Asset::select('id'))->whereIn('status', ['open', 'in_progress'])->count(),
             'audit'            => $audit,
             'auditTotal'       => $auditTotal,
             'auditDone'        => $auditDone,
@@ -198,9 +204,10 @@ class AssetController extends Controller
     // publik yang hanya menampilkan kode, nama, dan pemegang aset
     public function scan(string $code)
     {
-        $asset = Asset::byCode($code)->firstOrFail();
+        // tanpa pembatasan departemen: halaman publik harus bisa menampilkan aset mana pun
+        $asset = Asset::withoutGlobalScopes()->byCode($code)->firstOrFail();
 
-        if (Auth::check() && Auth::user()->role === 'it') {
+        if (Auth::check() && $asset->isManageableBy(Auth::user())) {
             return redirect()->route('assets.show', $asset);
         }
 
@@ -210,7 +217,7 @@ class AssetController extends Controller
     // Tombol "Buat Tiket" di halaman depan: wajib login, lalu form tiket terbuka dengan aset terisi
     public function scanTicket(string $code)
     {
-        $asset = Asset::byCode($code)->firstOrFail();
+        $asset = Asset::withoutGlobalScopes()->byCode($code)->firstOrFail();
 
         return redirect()->route('welcome', ['open_ticket' => 1, 'asset' => $asset->code]);
     }
@@ -226,7 +233,8 @@ class AssetController extends Controller
         $ws = $sheet->getActiveSheet();
         $ws->fromArray([
             self::IMPORT_HEADERS,
-            ['FA-00123', 'IT', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'Finance', 'aktif', '2024-03-15', '2027-03-15', 'Core i5 gen 11', '8GB', '512GB SSD', 'Windows 11', '', ''],
+            ['FA-00123', 'IT', 'Laptop Finance 01', 'Laptop', 'Lenovo', 'ThinkPad E14', 'PF3ABC12', 'Head Office', 'Lantai 2', 'Budi', 'Finance', 'aktif', '2024-03-15', '2027-03-15', 'Core i5 gen 11', '8GB', '512GB SSD', 'Windows 11', '', '', '', '', 'asset', '1', '', '', '', '', '', '', ''],
+            ['', 'GA', 'AC Daikin 1 PK', 'Peralatan Kantor', 'Daikin', 'FTP25AV', '', 'Pontianak', 'Office Pontianak', 'GA', '', 'aktif', '2025-07-20', '', '', '', '', '', '', '', 'AC split kantor', '', 'inventory', '2', '4700000', 'Baik', '', '', '', '', ''],
         ]);
 
         return response()->streamDownload(function () use ($sheet) {
@@ -242,6 +250,10 @@ class AssetController extends Controller
             ->getActiveSheet()->toArray(null, true, false, false);
 
         $header = array_map(fn ($h) => strtolower(trim((string) $h)), array_shift($rows) ?? []);
+        // format GA memakai "kategori" untuk jenis aset
+        if (!in_array('jenis', $header, true) && ($k = array_search('kategori', $header, true)) !== false) {
+            $header[$k] = 'jenis';
+        }
         $missing = array_diff(['nama', 'jenis'], $header);
         if ($missing) {
             return back()->with('error', 'Kolom wajib tidak ditemukan: '.implode(', ', $missing).'. Gunakan template yang disediakan.');
@@ -250,6 +262,7 @@ class AssetController extends Controller
         $created = 0;
         $updated = 0;
         $skipped = [];
+        $restricted = Asset::restrictedDepartment();
 
         foreach ($rows as $i => $row) {
             $data = [];
@@ -270,9 +283,13 @@ class AssetController extends Controller
 
             $accurateNo = $this->cleanAccurateNo($data['no_aset_accurate'] ?? '');
             $existing = $accurateNo ? Asset::where('accurate_no', $accurateNo)->first() : null;
+            if ($accurateNo && !$existing && Asset::withoutGlobalScopes()->where('accurate_no', $accurateNo)->exists()) {
+                $skipped[] = "baris {$line}: no. aset {$accurateNo} sudah dipakai departemen lain";
+                continue;
+            }
 
             $serial = $data['serial_number'] ?? '';
-            if ($serial !== '' && Asset::where('serial_number', $serial)->when($existing, fn ($q) => $q->where('id', '!=', $existing->id))->exists()) {
+            if ($serial !== '' && Asset::withoutGlobalScopes()->where('serial_number', $serial)->when($existing, fn ($q) => $q->where('id', '!=', $existing->id))->exists()) {
                 $skipped[] = "baris {$line}: serial number {$serial} sudah terdaftar";
                 continue;
             }
@@ -288,7 +305,8 @@ class AssetController extends Controller
             $attrs = [
                 'accurate_no'    => $accurateNo,
                 'name'           => $data['nama'],
-                'type'           => $data['jenis'],
+                'type'           => Asset::GA_CATEGORY_ALIASES[strtolower($data['jenis'])] ?? $data['jenis'],
+                'subcategory'    => ($data['subkategori'] ?? '') ?: null,
                 'brand'          => $data['merk'] ?? null ?: null,
                 'model'          => $data['model'] ?? null ?: null,
                 'serial_number'  => $serial ?: null,
@@ -306,10 +324,23 @@ class AssetController extends Controller
                 'spec_storage'   => ($data['storage'] ?? '') ?: null,
                 'spec_os'        => ($data['os'] ?? '') ?: null,
                 'spec_other'     => ($data['spesifikasi_lain'] ?? '') ?: null,
+                'old_asset_no'   => ($data['no_aset_lama'] ?? '') ?: null,
+                'asset_class'    => $this->parseAssetClass($data['kelas'] ?? ''),
+                'qty'            => max(1, (int) ($data['jumlah'] ?? 1)),
+                'acquisition_amount' => $this->parseMoney($data['harga_satuan'] ?? ''),
+                'condition_note' => ($data['kondisi'] ?? '') ?: null,
+                'vat_status'     => ($data['status_ppn'] ?? '') ?: null,
+                'disposed_at'    => $this->parseDate($data['tanggal_disposal'] ?? ''),
+                'disposal_reason' => ($data['alasan_disposal'] ?? '') ?: null,
+                'disposal_ba_no' => ($data['no_ba_disposal'] ?? '') ?: null,
+                'disposal_amount' => $this->parseMoney($data['nilai_disposal'] ?? ''),
             ];
 
             $dept = strtoupper($data['departemen'] ?? '');
             $dept = array_key_exists($dept, Asset::DEPARTMENTS) ? $dept : null;
+            if ($restricted) {
+                $dept = $restricted; // GA / Logistik hanya bisa mengimpor aset departemennya sendiri
+            }
 
             if ($existing) {
                 // sudah ada (No. Aset Accurate sama): perbarui data, tanpa membuat dobel.
@@ -519,6 +550,7 @@ class AssetController extends Controller
     public function destroyDocument(AssetDocument $document)
     {
         $asset = $document->asset;
+        abort_unless($asset, 404);
         \Illuminate\Support\Facades\Storage::disk('local')->delete($document->path);
         $document->delete();
 
@@ -527,11 +559,15 @@ class AssetController extends Controller
 
     public function showDocument(AssetDocument $document)
     {
+        abort_unless($document->asset, 404);
+
         return \Illuminate\Support\Facades\Storage::disk('local')->response($document->path, $document->original_name);
     }
 
     public function mutationFile(AssetMutation $mutation, string $kind)
     {
+        abort_unless($mutation->asset, 404);
+
         $path = match ($kind) {
             'photo'   => $mutation->photo_path,
             'receipt' => $mutation->receipt_path,
@@ -544,6 +580,8 @@ class AssetController extends Controller
 
     public function repairPhoto(AssetRepairPhoto $photo)
     {
+        abort_unless($photo->repair?->asset, 404);
+
         return \Illuminate\Support\Facades\Storage::disk('local')->response($photo->path, $photo->original_name);
     }
 
@@ -599,6 +637,31 @@ class AssetController extends Controller
         return strtoupper(preg_replace('/\s+/', '', (string) $value));
     }
 
+    private function parseAssetClass(string $value): ?string
+    {
+        $value = strtolower(trim($value));
+
+        return array_key_exists($value, Asset::ASSET_CLASSES) ? $value : null;
+    }
+
+    // "Rp 1.250.000,50" / "1250000" / "1,250,000" -> angka
+    private function parseMoney(string $value): ?float
+    {
+        $value = preg_replace('/[^0-9,.\-]/', '', $value);
+        if ($value === '' || $value === '-') {
+            return null;
+        }
+        if (preg_match('/^-?\d{1,3}(\.\d{3})+(,\d+)?$/', $value)) {
+            $value = str_replace(['.', ','], ['', '.'], $value);
+        } elseif (preg_match('/^-?\d{1,3}(,\d{3})+(\.\d+)?$/', $value)) {
+            $value = str_replace(',', '', $value);
+        } else {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
     private function parseDate(string $value): ?string
     {
         if ($value === '') {
@@ -618,9 +681,25 @@ class AssetController extends Controller
 
     private function validated(Request $request, ?Asset $asset = null): array
     {
+        // GA / Logistik: departemen selalu departemennya sendiri
+        if ($restricted = Asset::restrictedDepartment()) {
+            $request->merge(['department' => $restricted]);
+        }
+
         return $request->validate([
+            'asset_class'    => ['nullable', Rule::in(array_keys(Asset::ASSET_CLASSES))],
+            'old_asset_no'   => ['nullable', 'string', 'max:60'],
+            'qty'            => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'acquisition_amount' => ['nullable', 'numeric', 'min:0'],
+            'condition_note' => ['nullable', 'string', 'max:2000'],
+            'vat_status'     => ['nullable', 'string', 'max:50'],
+            'disposed_at'    => ['nullable', 'date'],
+            'disposal_reason' => ['nullable', 'string', 'max:255'],
+            'disposal_ba_no' => ['nullable', 'string', 'max:100'],
+            'disposal_amount' => ['nullable', 'numeric', 'min:0'],
             'name'           => ['required', 'string', 'max:255'],
             'type'           => ['required', 'string', 'max:50'],
+            'subcategory'    => ['nullable', 'string', 'max:100'],
             'brand'          => ['nullable', 'string', 'max:100'],
             'model'          => ['nullable', 'string', 'max:100'],
             'department'     => [$asset ? 'nullable' : 'required', Rule::in(array_keys(Asset::DEPARTMENTS))],

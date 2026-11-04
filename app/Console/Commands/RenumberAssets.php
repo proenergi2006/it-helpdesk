@@ -12,12 +12,12 @@ class RenumberAssets extends Command
     protected $signature = 'assets:renumber
         {--apply : Jalankan perubahan (tanpa ini hanya menampilkan rencana)}';
 
-    protected $description = 'Beri ulang nomor urut kode aset berdasarkan tanggal beli (terlama = 0001). Departemen dan cabang pada kode mengikuti data aset saat ini.';
+    protected $description = 'Beri ulang nomor urut kode aset berdasarkan tanggal beli per departemen (terlama = 0001). Departemen dan cabang pada kode mengikuti data aset saat ini.';
 
     public function handle(): int
     {
         // pembelian awal lebih dulu; tanggal kosong di urutan terakhir, lalu berdasarkan ID
-        $assets = Asset::query()
+        $assets = Asset::withoutGlobalScopes()
             ->orderByRaw('purchase_date is null')
             ->orderBy('purchase_date')
             ->orderBy('id')
@@ -29,11 +29,14 @@ class RenumberAssets extends Command
             return self::SUCCESS;
         }
 
-        $plan = $assets->values()->map(function (Asset $a, int $i) {
+        // nomor urut dihitung terpisah untuk tiap departemen
+        $counters = [];
+        $plan = $assets->values()->map(function (Asset $a) use (&$counters) {
             $dept = $a->department ?: 'IT';
             $cabang = Asset::CABANG_CODES[$a->cabang] ?? 'NA';
+            $counters[$dept] = ($counters[$dept] ?? 0) + 1;
 
-            return ['asset' => $a, 'old' => $a->code, 'new' => sprintf('AST-%s-%s-%04d', $dept, $cabang, $i + 1)];
+            return ['asset' => $a, 'old' => $a->code, 'new' => sprintf('AST-%s-%s-%04d', $dept, $cabang, $counters[$dept])];
         });
 
         $changes = $plan->filter(fn ($p) => $p['old'] !== $p['new']);

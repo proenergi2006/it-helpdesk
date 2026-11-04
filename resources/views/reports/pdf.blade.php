@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Laporan Tiket Helpdesk IT</title>
+    <title>Laporan Tiket Service Management</title>
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
@@ -77,7 +77,7 @@
         {{-- 🖼️ LOGO PERUSAHAAN --}}
         <img src="{{ public_path('images/proenergi-logo.png') }}" alt="Logo PT Pro Energi">
         <div style="flex: 1;">
-            <h3>Laporan Tiket Helpdesk IT</h3>
+            <h3>Laporan Tiket Service Management</h3>
             <p>Periode: {{ $start ? \Carbon\Carbon::parse($start)->format('d M Y') : '-' }}
                 s/d {{ $end ? \Carbon\Carbon::parse($end)->format('d M Y') : '-' }}</p>
         </div>
@@ -129,7 +129,7 @@
     </table>
 
     <p class="small text-center" style="margin-top: 15px;">
-        Dicetak oleh sistem Helpdesk IT · PT Pro Energi — {{ now()->format('d/m/Y H:i') }}
+        Dicetak oleh sistem Service Management · PT Pro Energi — {{ now()->format('d/m/Y H:i') }}
     </p>
 </body>
 

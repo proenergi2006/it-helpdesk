@@ -127,6 +127,7 @@
                         $groups = [
                             'Identitas' => [
                                 'Jenis' => $asset->type,
+                                'Subkategori' => $asset->subcategory,
                                 'Merk' => $asset->brand,
                                 'Model' => $asset->model,
                                 'Serial Number' => $asset->serial_number,
@@ -164,6 +165,30 @@
                         </dl>
                     </div>
 
+                    @if ($asset->asset_class || $asset->old_asset_no || $asset->acquisition_amount || $asset->condition_note || $asset->vat_status || $asset->disposed_at || $asset->disposal_reason || $asset->disposal_ba_no || ($asset->qty ?? 1) > 1)
+                        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Perolehan dan Kondisi</div>
+                            <dl class="space-y-2.5 text-sm">
+                                @foreach ([
+                                    'Kelas' => \App\Models\Asset::ASSET_CLASSES[$asset->asset_class] ?? null,
+                                    'No. aset lama' => $asset->old_asset_no,
+                                    'Jumlah' => $asset->qty,
+                                    'Harga per unit' => $asset->acquisition_amount !== null ? 'Rp '.number_format($asset->acquisition_amount, 0, ',', '.') : null,
+                                    'Total perolehan' => $asset->acquisition_amount !== null ? 'Rp '.number_format($asset->acquisition_amount * ($asset->qty ?: 1), 0, ',', '.') : null,
+                                    'Status PPN' => $asset->vat_status,
+                                    'Kondisi' => $asset->condition_note,
+                                    'Tgl disposal' => $asset->disposed_at?->format('d M Y'),
+                                    'Alasan disposal' => $asset->disposal_reason,
+                                    'No. BA disposal' => $asset->disposal_ba_no,
+                                    'Nilai disposal' => $asset->disposal_amount !== null ? 'Rp '.number_format($asset->disposal_amount, 0, ',', '.') : null,
+                                ] as $label => $value)
+                                    <div class="flex justify-between gap-4"><dt class="text-gray-500 shrink-0">{{ $label }}</dt><dd class="text-gray-900 text-right break-words min-w-0">{{ $value ?: '-' }}</dd></div>
+                                @endforeach
+                            </dl>
+                        </div>
+                    @endif
+
+@if ($asset->department === 'IT' || $asset->spec_cpu || $asset->spec_ram || $asset->spec_storage || $asset->spec_os || $asset->spec_other)
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Spesifikasi</div>
                         <dl class="space-y-2.5 text-sm">
@@ -173,6 +198,7 @@
                         </dl>
                         @if ($asset->spec_other)<p class="mt-3 text-sm text-gray-700 whitespace-pre-line border-t pt-3">{{ $asset->spec_other }}</p>@endif
                     </div>
+                    @endif
 
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Catatan</div>

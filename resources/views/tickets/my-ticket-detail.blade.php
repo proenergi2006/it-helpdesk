@@ -26,7 +26,7 @@
             [
                 'key' => 'open',
                 'title' => 'Menunggu Penanganan',
-                'desc' => 'Ticket sudah masuk ke antrian helpdesk',
+                'desc' => 'Ticket sudah masuk ke antrian layanan',
                 'time' => $ticket->created_at ? $ticket->created_at->format('d/m/Y H:i') : '-',
             ],
             [
@@ -363,7 +363,7 @@
                         <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                             <h3 class="text-xl font-bold text-slate-800 mb-2">Berikan Penilaian</h3>
                             <p class="text-sm text-slate-500 mb-5">
-                                Bantu kami meningkatkan layanan helpdesk dengan memberikan rating dan komentar.
+                                Bantu kami meningkatkan layanan kami dengan memberikan rating dan komentar.
                             </p>
 
                             <form method="POST" action="{{ route('tickets.my.feedback', $ticket->id) }}" class="space-y-5">
@@ -494,7 +494,7 @@
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
                         <h3 class="text-xl font-bold text-slate-800 mb-3">Catatan</h3>
                         <p class="text-sm text-slate-500 leading-relaxed">
-                            Jika ticket sudah selesai, Anda dapat memberikan rating dan komentar sebagai masukan untuk peningkatan layanan helpdesk.
+                            Jika ticket sudah selesai, Anda dapat memberikan rating dan komentar sebagai masukan untuk peningkatan layanan kami.
                         </p>
                     </div>
                 </div>

@@ -109,8 +109,8 @@ Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->nam
 Route::get('/assets/scan/{code}', [\App\Http\Controllers\AssetController::class, 'scan'])->name('assets.scan');
 Route::middleware('auth')->get('/assets/scan/{code}/ticket', [\App\Http\Controllers\AssetController::class, 'scanTicket'])->name('assets.scan.ticket');
 
-// Khusus IT
-Route::middleware(['auth', 'role:it'])->group(function () {
+// Modul aset: IT (semua departemen), GA dan Logistik (hanya departemen sendiri)
+Route::middleware(['auth', 'role:it,ga,logistik'])->group(function () {
     Route::get('/assets/dashboard', [\App\Http\Controllers\AssetController::class, 'dashboard'])->name('assets.dashboard');
     Route::get('/assets/labels', [\App\Http\Controllers\AssetController::class, 'labels'])->name('assets.labels');
     Route::get('/assets/import', [\App\Http\Controllers\AssetController::class, 'importForm'])->name('assets.import');
@@ -132,6 +132,10 @@ Route::middleware(['auth', 'role:it'])->group(function () {
     Route::post('/assets/{asset}/repairs', [\App\Http\Controllers\AssetController::class, 'storeRepair'])->name('assets.repairs.store');
     Route::post('/assets/{asset}/mutations', [\App\Http\Controllers\AssetController::class, 'mutate'])->name('assets.mutations.store');
     Route::resource('assets', \App\Http\Controllers\AssetController::class);
+});
+
+// Khusus IT
+Route::middleware(['auth', 'role:it'])->group(function () {
     Route::get('/approvals', [TicketController::class, 'approvals'])->name('approvals.index');
     Route::post('/approvals/{id}/approve', [TicketController::class, 'approve'])->name('approvals.approve');
     Route::post('/approvals/{id}/reject', [TicketController::class, 'reject'])->name('approvals.reject');

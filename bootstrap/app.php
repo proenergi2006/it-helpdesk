@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
+        $middleware->appendToGroup('web', \App\Http\Middleware\LimitAssetRoles::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

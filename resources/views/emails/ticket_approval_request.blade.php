@@ -25,7 +25,7 @@
             Link ini berlaku 3 hari dan khusus untuk Anda. Anda juga bisa memproses ticket dari
             <a href="{{ route('approvals.index') }}" style="color:#1d4ed8;">halaman Approval</a>.
         </p>
-        <p style="margin-top:25px; font-size:12px; color:#6b7280;">Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.</p>
+        <p style="margin-top:25px; font-size:12px; color:#6b7280;">Email ini dikirim otomatis oleh sistem Service Management Pro Energi.</p>
     </div>
 </body>
 </html>

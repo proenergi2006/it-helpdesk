@@ -43,6 +43,10 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('dashboard', absolute: false));
         }
 
+        if (isset(\App\Models\Asset::ROLE_DEPARTMENTS[$user->role])) {
+            return redirect()->intended(route('assets.dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('welcome', absolute: false));
     }
 

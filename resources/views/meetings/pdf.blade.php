@@ -259,7 +259,7 @@
                 <span>Confidential · Internal Use Only</span>
             </td>
             <td class="col right">
-                <span>IT Helpdesk System · MoM Export</span>
+                <span>Service Management System · MoM Export</span>
             </td>
         </tr>
     </table>

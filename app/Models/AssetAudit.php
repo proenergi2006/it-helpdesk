@@ -35,6 +35,13 @@ class AssetAudit extends Model
 
     public static function current(): ?self
     {
-        return static::whereNull('closed_at')->latest('id')->first();
+        // opname berjalan per kelompok: GA / Logistik hanya melihat miliknya, IT melihat milik IT
+        return static::whereNull('closed_at')
+            ->when(
+                Asset::restrictedDepartment(),
+                fn ($q) => $q->where('created_by', \Illuminate\Support\Facades\Auth::id()),
+                fn ($q) => $q->whereDoesntHave('creator', fn ($u) => $u->whereIn('role', array_keys(Asset::ROLE_DEPARTMENTS)))
+            )
+            ->latest('id')->first();
     }
 }

@@ -51,7 +51,7 @@ class Ticket extends Model
 
     public function asset()
     {
-        return $this->belongsTo(Asset::class);
+        return $this->belongsTo(Asset::class)->withoutGlobalScopes();
     }
 
     public function project()

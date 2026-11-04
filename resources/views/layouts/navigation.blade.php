@@ -1,3 +1,4 @@
+@php $assetOnly = Auth::check() && isset(\App\Models\Asset::ROLE_DEPARTMENTS[Auth::user()->role]); @endphp
 <nav x-data="{ open: false }" class="sticky top-0 z-50">
     <!-- Futuristic top glow -->
     <div class="pointer-events-none absolute inset-x-0 -top-10 h-24 bg-gradient-to-r from-cyan-500/20 via-transparent to-fuchsia-500/20 blur-2xl"></div>
@@ -10,7 +11,7 @@
                 <div class="flex items-center gap-6">
                     <!-- Logo -->
                     <div class="shrink-0 flex items-center">
-                        <a href="{{ route('dashboard') }}" class="group inline-flex items-center gap-3">
+                        <a href="{{ route($assetOnly ? 'assets.dashboard' : 'dashboard') }}" class="group inline-flex items-center gap-3">
                             <span class="grid h-10 w-10 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10 group-hover:ring-cyan-400/40 transition">
                                 <img src="{{ asset('images/proenergi-logo.png') }}"
                                      alt="Pro Energi Logo"
@@ -20,7 +21,7 @@
                             <div class="hidden sm:block leading-tight">
                                 <div class="text-xs text-slate-400">Internal Support</div>
                                 <div class="text-sm font-semibold text-slate-100">
-                                    Helpdesk <span class="text-cyan-300">Portal</span>
+                                    Service <span class="text-cyan-300">Management</span>
                                 </div>
                             </div>
                         </a>
@@ -28,6 +29,10 @@
 
                     <!-- Navigation Links (Desktop) -->
                     <div class="hidden sm:flex items-center gap-1">
+                        {{-- GA / Logistik hanya melihat menu Aset --}}
+                        @if ($assetOnly)
+                            <a href="{{ route('assets.dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('assets.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Aset</a>
+                        @else
                         <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Dashboard</a>
 
                         @if (Auth::check() && in_array(strtolower(Auth::user()->email), array_map('strtolower', config('helpdesk.approvers'))))
@@ -35,7 +40,7 @@
                             <a href="{{ route('approvals.index') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('approvals.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"><span class="inline-flex items-center">Approval @if ($pendingApprovals > 0)<span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-bold leading-5 text-white">{{ $pendingApprovals }}</span>@endif</span></a>
                         @endif
 
-                        @if (Auth::check() && Auth::user()->role === 'it')
+                        @if (\App\Models\Asset::canAccessModule())
                             <a href="{{ route('assets.dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium transition {{ request()->routeIs('assets.*') ? 'bg-white/10 text-white' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">Aset</a>
                         @endif
 
@@ -99,6 +104,7 @@
                             </div>
                         </div>
 
+                        @endif
                     </div>
                 </div>
 
@@ -191,6 +197,12 @@
         <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
             <div class="px-4 pb-4 pt-2 space-y-2">
 
+                @if ($assetOnly)
+                    <a href="{{ route('assets.dashboard') }}"
+                       class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
+                        Aset
+                    </a>
+                @else
                 <a href="{{ route('dashboard') }}"
                    class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
                     Dashboard
@@ -204,7 +216,7 @@
                     </a>
                 @endif
 
-                @if (Auth::check() && Auth::user()->role === 'it')
+                @if (\App\Models\Asset::canAccessModule())
                     <a href="{{ route('assets.dashboard') }}"
                        class="block rounded-2xl bg-white/5 px-4 py-3 text-slate-200 ring-1 ring-white/10 hover:ring-cyan-400/30 transition">
                         Aset
@@ -318,6 +330,8 @@
                         </a>
                     </div>
                 </div>
+
+                @endif
 
                 @auth
                     <div class="mt-3 rounded-2xl bg-slate-950/50 p-4 ring-1 ring-white/10">

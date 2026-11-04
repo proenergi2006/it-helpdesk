@@ -44,7 +44,7 @@
         </p>
 
         <p style="margin-top:25px; font-size:12px; color:#6b7280;">
-            Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.
+            Email ini dikirim otomatis oleh sistem Service Management Pro Energi.
         </p>
 
     </div>

@@ -13,7 +13,7 @@
             <h2 style="color:#16a34a; margin-top:0;">Ticket Disetujui</h2>
             <p>Ticket #{{ str_pad($ticket->id, 3, '0', STR_PAD_LEFT) }} "{{ $ticket->title }}" sudah disetujui dan akan segera diproses tim IT.</p>
         @endif
-        <p style="margin-top:25px; font-size:12px; color:#6b7280;">Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.</p>
+        <p style="margin-top:25px; font-size:12px; color:#6b7280;">Email ini dikirim otomatis oleh sistem Service Management Pro Energi.</p>
     </div>
 </body>
 </html>

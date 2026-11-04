@@ -18,8 +18,9 @@
                     <li>Kode aset dibuat otomatis. Baris dengan serial number yang sudah terdaftar dilewati.</li>
                     <li>Spesifikasi: kolom <strong>processor, ram, storage, os, spesifikasi_lain</strong>. Departemen pengguna tanpa akun: kolom <strong>departemen_pengguna</strong>.</li>
                     <li>Kolom <strong>departemen</strong> berisi singkatan ({{ implode(', ', array_keys(\App\Models\Asset::DEPARTMENTS)) }}); kosong dianggap IT. Cabang dipakai untuk membentuk kode, contoh <code>AST-IT-JKT-0012</code>.</li>
-                    <li>Kolom <strong>no_aset_accurate</strong> opsional. Jika nomor sudah ada di helpdesk, data aset itu diperbarui (tidak dibuat dobel).</li>
+                    <li>Kolom <strong>no_aset_accurate</strong> opsional. Jika nomor sudah ada di Service Management, data aset itu diperbarui (tidak dibuat dobel).</li>
                     <li>Kolom status: aktif, dipinjam, rusak, diperbaiki, disposal. Tanggal format <code>2024-03-15</code>.</li>
+                    <li>Aset GA / Logistik: gunakan kolom <strong>kategori</strong> (atau jenis) dan <strong>subkategori</strong>, <strong>kelas</strong> (asset / inventory), <strong>jumlah</strong>, <strong>harga_satuan</strong>, <strong>kondisi</strong>, <strong>no_aset_lama</strong>, <strong>status_ppn</strong>, dan kolom disposal. User GA dan Logistik hanya bisa mengimpor aset departemennya sendiri.</li>
                     <li>Format file: .xlsx, .xls, atau .csv (maksimal 5 MB).</li>
                 </ol>
 

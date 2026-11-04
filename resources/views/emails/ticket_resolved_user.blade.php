@@ -43,11 +43,11 @@
         </table>
 
         <p style="margin-top:20px;">
-            Terima kasih telah menggunakan layanan Helpdesk IT Pro Energi.
+            Terima kasih telah menggunakan layanan Service Management Pro Energi.
         </p>
 
         <p style="font-size:12px; color:#6b7280; margin-top:30px;">
-            Email ini dikirim otomatis oleh sistem Helpdesk IT — PT Pro Energi.
+            Email ini dikirim otomatis oleh sistem Service Management — PT Pro Energi.
         </p>
 
     </div>

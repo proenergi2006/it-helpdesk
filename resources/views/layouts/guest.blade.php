@@ -27,7 +27,7 @@
                                 IT Department · Pro Energi
                             </div>
                             <div class="text-xs text-slate-400">
-                                Internal System — Helpdesk · Documentation · Projects · MoM
+                                Internal System — Service Management · Documentation · Projects · MoM
                             </div>
                         </div>
                     </div>
@@ -37,7 +37,7 @@
                             © 2026 <span class="font-medium text-slate-100">Pro Energi</span>. All rights reserved.
                         </div>
                         <div class="text-xs text-slate-500">
-                            Powered by IT Department · {{ config('app.name', 'Helpdesk') }}
+                            Powered by IT Department · {{ config('app.name', 'Service Management') }}
                         </div>
                     </div>
 

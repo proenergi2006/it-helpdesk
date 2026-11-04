@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight flex items-center gap-2">
-            📈 <span>Dashboard Trend & Analisis Helpdesk IT</span>
+            📈 <span>Dashboard Trend & Analisis Service Management</span>
         </h2>
     </x-slot>
 
@@ -68,7 +68,7 @@
 
             {{-- Footer --}}
             <div class="text-center text-gray-500 text-xs mt-10">
-                © {{ date('Y') }} PT Pro Energi — Helpdesk IT Dashboard v{{ config('app.version', '1.0') }}
+                © {{ date('Y') }} PT Pro Energi — Service Management Dashboard v{{ config('app.version', '1.0') }}
             </div>
         </div>
     </div>

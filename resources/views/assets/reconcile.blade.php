@@ -16,7 +16,7 @@
                 <ol class="list-decimal ml-5 text-sm text-gray-700 space-y-1">
                     <li>Minta finance mengekspor daftar aset dari Accurate (Excel/CSV).</li>
                     <li>Pastikan ada kolom nomor aset dengan header <code>No. Aset</code> atau <code>no_aset_accurate</code>. Kolom <code>Nama</code> opsional.</li>
-                    <li>Hasil perbandingan hanya laporan, data aset di helpdesk tidak diubah.</li>
+                    <li>Hasil perbandingan hanya laporan, data aset di Service Management tidak diubah.</li>
                 </ol>
 
                 <form method="POST" action="{{ route('assets.reconcile.run') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
@@ -31,7 +31,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     @foreach ([
                         'Aset di Accurate' => $result['total_accurate'],
-                        'Aset di Helpdesk (ber-nomor Accurate)' => $result['total_helpdesk'],
+                        'Aset di Service Management (ber-nomor Accurate)' => $result['total_helpdesk'],
                         'Cocok' => $result['matched'],
                         'Perlu ditindaklanjuti' => $result['only_accurate']->count() + $result['only_helpdesk']->count() + $result['disposed_still']->count(),
                     ] as $label => $n)
@@ -43,8 +43,8 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="font-semibold mb-1">Ada di Accurate, belum ada di Helpdesk ({{ $result['only_accurate']->count() }})</h3>
-                    <p class="text-xs text-gray-500 mb-3">Tindakan: IT menambahkan ke helpdesk (bisa lewat Import dengan file yang sama).</p>
+                    <h3 class="font-semibold mb-1">Ada di Accurate, belum ada di Service Management ({{ $result['only_accurate']->count() }})</h3>
+                    <p class="text-xs text-gray-500 mb-3">Tindakan: IT menambahkan ke Service Management (bisa lewat Import dengan file yang sama).</p>
                     @forelse ($result['only_accurate'] as $r)
                         <div class="text-sm py-1 border-b last:border-0"><span class="font-mono">{{ $r['no'] }}</span> {{ $r['name'] }}</div>
                     @empty
@@ -53,7 +53,7 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="font-semibold mb-1">Ada di Helpdesk, tidak ada di Accurate ({{ $result['only_helpdesk']->count() }})</h3>
+                    <h3 class="font-semibold mb-1">Ada di Service Management, tidak ada di Accurate ({{ $result['only_helpdesk']->count() }})</h3>
                     <p class="text-xs text-gray-500 mb-3">Mungkin sudah di-disposal di Accurate atau nomor salah ketik. Tindakan: cek bersama finance.</p>
                     @forelse ($result['only_helpdesk'] as $a)
                         <div class="text-sm py-1 border-b last:border-0">
@@ -66,7 +66,7 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="font-semibold mb-1">Status Disposal di Helpdesk, tapi masih ada di Accurate ({{ $result['disposed_still']->count() }})</h3>
+                    <h3 class="font-semibold mb-1">Status Disposal di Service Management, tapi masih ada di Accurate ({{ $result['disposed_still']->count() }})</h3>
                     <p class="text-xs text-gray-500 mb-3">Tindakan: finance memproses disposal di Accurate.</p>
                     @forelse ($result['disposed_still'] as $a)
                         <div class="text-sm py-1 border-b last:border-0">

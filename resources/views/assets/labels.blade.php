@@ -41,7 +41,7 @@
                     <div class="code">{{ $asset->code }}</div>
                     <div class="name">{{ $asset->name }}</div>
                     <div class="meta">{{ $asset->cabang }}@if ($asset->serial_number) · SN {{ $asset->serial_number }}@endif</div>
-                    <div class="brand">Scan untuk lapor masalah · IT Helpdesk</div>
+                    <div class="brand">Scan untuk lapor masalah · Service Management</div>
                 </div>
             </div>
         @endforeach

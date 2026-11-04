@@ -13,4 +13,4 @@
 <p>Tim IT akan segera memproses ticket Anda.</p>
 
 <p>Terima kasih,<br>
-    Helpdesk IT — PT. Pro Energi</p>
+    Service Management — PT Pro Energi</p>

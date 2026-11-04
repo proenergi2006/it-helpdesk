@@ -12,7 +12,7 @@
         <div class="flex items-center gap-3">
             <img src="{{ asset('images/proenergi-logo.png') }}" alt="Pro Energi" class="h-10 w-auto">
             <div>
-                <div class="font-bold text-blue-700 leading-tight">Helpdesk IT</div>
+                <div class="font-bold text-blue-700 leading-tight">Service Management</div>
                 <div class="text-xs text-gray-500">Pro Energi</div>
             </div>
         </div>
@@ -49,7 +49,7 @@
         </div>
 
         <div class="text-center">
-            <a href="{{ route('welcome') }}" class="text-sm text-blue-600 hover:underline">Ke halaman utama Helpdesk</a>
+            <a href="{{ route('welcome') }}" class="text-sm text-blue-600 hover:underline">Ke halaman utama Service Management</a>
         </div>
     </div>
 </body>

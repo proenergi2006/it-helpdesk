@@ -52,16 +52,16 @@
         </table>
 
         <p style="margin-top:20px;">
-            Silakan login ke dashboard Helpdesk IT untuk memproses ticket ini.
+            Silakan login ke dashboard Service Management untuk memproses ticket ini.
         </p>
 
         <a href="https://helpdesk.proenergi.com/login"
             style="display:inline-block; margin-top:10px; padding:10px 15px; background:#1d4ed8; color:#fff; text-decoration:none; border-radius:6px;">
-            Buka Dashboard Helpdesk
+            Buka Service Management
         </a>
 
         <p style="margin-top:25px; font-size:12px; color:#6b7280;">
-            Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.
+            Email ini dikirim otomatis oleh sistem Service Management Pro Energi.
         </p>
     </div>
 

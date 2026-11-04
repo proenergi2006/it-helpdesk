@@ -73,11 +73,11 @@
 
         <!-- Penutup -->
         <p style="margin-top:20px;">
-            Jika Anda masih membutuhkan bantuan, silakan membuat ticket baru melalui sistem Helpdesk IT.
+            Jika Anda masih membutuhkan bantuan, silakan membuat ticket baru melalui sistem Service Management.
         </p>
 
         <p style="margin-top:25px; font-size:12px; color:#6b7280;">
-            Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.
+            Email ini dikirim otomatis oleh sistem Service Management Pro Energi.
         </p>
 
     </div>

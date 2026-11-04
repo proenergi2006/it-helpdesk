@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>System Antrian Helpdesk IT</title>
+    <title>Service Management</title>
     <link rel="icon" type="image/png" href="{{ asset('images/proenergi-logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/image-compress.js'])
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -123,7 +123,7 @@
                     class="h-10 w-auto md:h-12 object-contain">
                 <div>
                     <h1 class="text-2xl md:text-3xl font-extrabold text-blue-700 flex items-center gap-2">
-                        Antrian Helpdesk IT
+                        Antrian Layanan
                     </h1>
                     <p class="text-gray-600 text-sm md:text-base">Pusat Bantuan IT - Pro Energi</p>
                 </div>
@@ -399,7 +399,7 @@
     <footer class="mt-10 text-center text-gray-500 text-sm py-6 border-t border-gray-200">
         <div class="flex flex-col md:flex-row justify-center items-center gap-2">
             <img src="{{ asset('images/proenergi-logo.png') }}" alt="Pro Energi" class="h-6 w-auto opacity-70">
-            <span>© {{ date('Y') }} <strong>PT Pro Energi</strong> — IT Helpdesk System</span>
+            <span>© {{ date('Y') }} <strong>PT Pro Energi</strong> — Service Management System</span>
         </div>
         <p class="mt-2 text-xs text-gray-400">
             Versi {{ config('app.version', '1.0.0') }} · Dikembangkan oleh <span

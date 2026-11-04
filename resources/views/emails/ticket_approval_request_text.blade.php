@@ -12,4 +12,4 @@ Tinjau dan putuskan (setujui / tolak), link berlaku 3 hari dan khusus untuk Anda
 
 Atau proses dari halaman Approval: {{ route('approvals.index') }}
 
-Email ini dikirim otomatis oleh sistem Helpdesk IT Pro Energi.
+Email ini dikirim otomatis oleh sistem Service Management Pro Energi.

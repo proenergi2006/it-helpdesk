@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Asset extends Model
 {
@@ -10,6 +12,41 @@ class Asset extends Model
         'Laptop', 'PC / Desktop', 'Monitor', 'Printer', 'Scanner', 'Server',
         'Switch', 'Router', 'Access Point', 'CCTV', 'UPS', 'Lainnya',
     ];
+
+    // Kategori aset tetap GA / Logistik => subkategori / contoh. Kolom type menyimpan kategori.
+    public const GA_CATEGORIES = [
+        'Tanah' => ['Tanah untuk bangunan kantor', 'Tanah untuk pool', 'Tanah parkir'],
+        'Bangunan & Renovasi' => ['Bangunan kantor', 'Bangunan stall', 'Renovasi/perbaikan bangunan', 'Sistem AC sentral', 'Instalasi listrik & plumbing permanen'],
+        'Peralatan & Mesin' => ['Mesin produksi', 'Genset (generator set)', 'AC (non permanen)', 'Kompresor', 'Alat las', 'Pompa air', 'Mesin pendingin industri', 'Mesin fotokopi besar'],
+        'Peralatan Kantor' => ['Komputer & laptop', 'Printer & scanner', 'AC split kantor', 'Telepon & perangkat komunikasi', 'Mesin absensi', 'Mesin penghitung uang'],
+        'Perabot & Fasilitas' => ['Meja & kursi', 'Lemari arsip', 'Partisi kantor', 'Sofa & perabot ruang tamu', 'Lampu hias permanen'],
+        'Kendaraan' => ['Mobil operasional', 'Truk pengiriman', 'Motor dinas', 'Forklift', 'Alat berat'],
+        'Peralatan IT & Elektronik' => ['Server', 'Router, switch, UPS', 'Monitor & proyektor', 'CCTV'],
+        'Aset dalam Pengerjaan' => ['Pembangunan gedung belum selesai', 'Proyek instalasi mesin baru', 'Pemasangan sistem AC sentral (belum selesai)'],
+        'Aset Tak Berwujud' => ['Hak paten', 'Lisensi software', 'Merek dagang', 'Goodwill'],
+    ];
+
+    // Penulisan lain di Master Asset lama => kategori baku (dipakai saat import)
+    public const GA_CATEGORY_ALIASES = [
+        'office equipment' => 'Peralatan Kantor', 'peralatan kantor' => 'Peralatan Kantor',
+        'machinery & equipment' => 'Peralatan & Mesin', 'machinery and equipment' => 'Peralatan & Mesin', 'peralatan & mesin' => 'Peralatan & Mesin',
+        'tanki / storage' => 'Peralatan & Mesin',
+        'furniture & fixtures' => 'Perabot & Fasilitas', 'furniture and fixtures' => 'Perabot & Fasilitas', 'perabot & fasilitas' => 'Perabot & Fasilitas',
+        'vehicles' => 'Kendaraan', 'vehicle' => 'Kendaraan', 'kendaraan' => 'Kendaraan',
+        'interior' => 'Bangunan & Renovasi', 'building' => 'Bangunan & Renovasi',
+        'it equipment' => 'Peralatan IT & Elektronik', 'peralatan it & elektronik' => 'Peralatan IT & Elektronik',
+        'land' => 'Tanah', 'intangible' => 'Aset Tak Berwujud',
+    ];
+
+    public static function gaTypes(): array
+    {
+        return array_keys(self::GA_CATEGORIES);
+    }
+
+    // Role yang hanya boleh mengelola aset departemennya sendiri. IT melihat semua departemen.
+    public const ROLE_DEPARTMENTS = ['ga' => 'GA', 'logistik' => 'LOG'];
+
+    public const ASSET_CLASSES = ['asset' => 'Asset', 'inventory' => 'Inventory'];
 
     public const STATUSES = [
         'aktif'     => 'Aktif',
@@ -33,27 +70,85 @@ class Asset extends Model
     // Departemen pemilik aset: singkatan => nama. Sesuaikan dengan daftar departemen perusahaan.
     public const DEPARTMENTS = [
         'IT' => 'IT', 'FIN' => 'Finance', 'HR' => 'HR', 'GA' => 'General Affair',
-        'OPS' => 'Operasional', 'MKT' => 'Marketing',
+        'LOG' => 'Logistik', 'OPS' => 'Operasional', 'MKT' => 'Marketing',
     ];
 
     protected $fillable = [
-        'code', 'legacy_code', 'department', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'code', 'legacy_code', 'department', 'subcategory', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'asset_class', 'old_asset_no', 'qty', 'acquisition_amount', 'condition_note', 'vat_status',
+        'disposed_at', 'disposal_reason', 'disposal_ba_no', 'disposal_amount',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
     protected $casts = [
         'purchase_date'  => 'date',
         'warranty_until' => 'date',
+        'disposed_at'    => 'date',
     ];
+
+    // Pilihan jenis/kategori untuk dropdown: [grup => daftar]. GA / Logistik hanya melihat kategori GA.
+    public static function typeOptions(): array
+    {
+        return self::restrictedDepartment()
+            ? ['Kategori' => self::gaTypes()]
+            : ['IT' => self::TYPES, 'GA / Logistik' => self::gaTypes()];
+    }
+
+    // Departemen yang dibatasi untuk user yang sedang login (null = tidak dibatasi)
+    public static function restrictedDepartment(): ?string
+    {
+        return Auth::check() ? (self::ROLE_DEPARTMENTS[Auth::user()->role] ?? null) : null;
+    }
+
+    // Role yang boleh membuka modul aset: IT (semua) serta GA dan Logistik (departemen sendiri)
+    public static function canAccessModule($user = null): bool
+    {
+        $user ??= Auth::user();
+
+        return $user && ($user->role === 'it' || isset(self::ROLE_DEPARTMENTS[$user->role]));
+    }
+
+    // Boleh mengelola aset ini? (dipakai di luar global scope, mis. saat scan QR)
+    public function isManageableBy($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+        if ($user->role === 'it') {
+            return true;
+        }
+
+        return (self::ROLE_DEPARTMENTS[$user->role] ?? null) === $this->department;
+    }
 
     protected static function booted(): void
     {
+        // GA dan Logistik hanya melihat aset departemennya sendiri, di semua halaman dan relasi
+        static::addGlobalScope('department_access', function (Builder $query) {
+            if ($dept = self::restrictedDepartment()) {
+                $query->where($query->getModel()->getTable().'.department', $dept);
+            }
+        });
+
         // kode aset otomatis: AST-{DEPT}-{CABANG}-{NOMOR}, contoh AST-IT-JKT-0012.
         // Dikunci saat aset dibuat dan tidak berubah walau aset dimutasi.
-        // Nomor memakai ID aset sehingga satu rangkaian untuk semua dan tidak bisa bentrok.
+        // Nomor urut dihitung per departemen (IT, GA, LOG masing-masing mulai dari 0001).
         static::created(function (Asset $asset) {
-            if (!$asset->code) {
-                $asset->forceFill(['code' => self::makeCode($asset)])->saveQuietly();
+            if ($asset->code) {
+                return;
+            }
+
+            // bila dua aset disimpan bersamaan dan mendapat nomor sama, indeks unik menolak yang kedua; ulangi
+            for ($try = 0; ; $try++) {
+                try {
+                    $asset->forceFill(['code' => self::makeCode($asset)])->saveQuietly();
+
+                    return;
+                } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                    if ($try >= 5) {
+                        throw $e;
+                    }
+                }
             }
         });
     }
@@ -71,7 +166,19 @@ class Asset extends Model
         $dept = $asset->department ?: 'IT';
         $cabang = self::CABANG_CODES[$asset->cabang] ?? 'NA';
 
-        return sprintf('AST-%s-%s-%04d', $dept, $cabang, $asset->id);
+        return sprintf('AST-%s-%s-%04d', $dept, $cabang, self::nextNumber($dept));
+    }
+
+    // Nomor urut berikutnya dalam satu departemen (tertinggi yang ada + 1, lintas cabang)
+    public static function nextNumber(string $dept): int
+    {
+        $max = static::withoutGlobalScopes()
+            ->where('code', 'like', "AST-{$dept}-%")
+            ->pluck('code')
+            ->map(fn ($c) => (int) substr(strrchr($c, '-'), 1))
+            ->max();
+
+        return ($max ?? 0) + 1;
     }
 
     public function getDepartmentNameAttribute(): ?string

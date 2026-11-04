@@ -11,7 +11,9 @@ class AssetAuditController extends Controller
 {
     public function index()
     {
-        $audits = AssetAudit::withCount('items')->with('creator')->latest('id')->get();
+        $audits = AssetAudit::withCount('items')->with('creator')->latest('id')
+            ->when(Asset::restrictedDepartment(), fn ($q) => $q->where('created_by', Auth::id()))
+            ->get();
 
         return view('assets.audits.index', compact('audits'));
     }
@@ -34,6 +36,7 @@ class AssetAuditController extends Controller
 
     public function show(AssetAudit $audit)
     {
+        $this->authorizeAudit($audit);
         $total = $audit->assetsInScope()->count();
         $scannedIds = $audit->items()->pluck('asset_id');
 
@@ -47,6 +50,7 @@ class AssetAuditController extends Controller
 
     public function scan(Request $request, AssetAudit $audit)
     {
+        $this->authorizeAudit($audit);
         $request->validate(['code' => ['required', 'string', 'max:100']]);
 
         // QR berisi URL .../assets/scan/AST-0001; pemindai bisa mengirim URL penuh atau hanya kodenya
@@ -62,11 +66,13 @@ class AssetAuditController extends Controller
 
     public function verify(Request $request, AssetAudit $audit, Asset $asset)
     {
+        $this->authorizeAudit($audit);
         return $this->mark($audit, $asset, $request->input('note'));
     }
 
     public function close(AssetAudit $audit)
     {
+        $this->authorizeAudit($audit);
         if ($audit->isOpen()) {
             $audit->update(['closed_at' => now()]);
         }
@@ -90,5 +96,11 @@ class AssetAuditController extends Controller
             : "{$asset->code} sudah terverifikasi sebelumnya.";
 
         return back()->with($item->wasRecentlyCreated ? 'success' : 'error', $msg);
+    }
+
+    // GA / Logistik hanya boleh membuka opname yang mereka buat sendiri
+    private function authorizeAudit(AssetAudit $audit): void
+    {
+        abort_if(Asset::restrictedDepartment() && $audit->created_by !== Auth::id(), 404);
     }
 }

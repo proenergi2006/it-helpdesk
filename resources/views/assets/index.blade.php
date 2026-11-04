@@ -26,8 +26,12 @@
                        class="rounded-lg border-gray-300 md:col-span-2">
                 <select name="type" class="rounded-lg border-gray-300">
                     <option value="">Semua jenis</option>
-                    @foreach (\App\Models\Asset::TYPES as $t)
-                        <option value="{{ $t }}" @selected(request('type') === $t)>{{ $t }}</option>
+                    @foreach (\App\Models\Asset::typeOptions() as $group => $list)
+                        <optgroup label="{{ $group }}">
+                            @foreach ($list as $t)
+                                <option value="{{ $t }}" @selected(request('type') === $t)>{{ $t }}</option>
+                            @endforeach
+                        </optgroup>
                     @endforeach
                 </select>
                 <select name="sort" class="rounded-lg border-gray-300">
@@ -35,7 +39,7 @@
                     <option value="purchase_asc" @selected(request('sort') === 'purchase_asc')>Beli terlama dulu</option>
                     <option value="purchase_desc" @selected(request('sort') === 'purchase_desc')>Beli terbaru dulu</option>
                 </select>
-                <select name="department" class="rounded-lg border-gray-300">
+                <select name="department" class="rounded-lg border-gray-300 @if (\App\Models\Asset::restrictedDepartment()) hidden @endif">
                     <option value="">Semua dept.</option>
                     @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
                         <option value="{{ $k }}" @selected(request('department') === $k)>{{ $v }}</option>

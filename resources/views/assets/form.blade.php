@@ -1,4 +1,9 @@
-@php $editing = $asset->exists; @endphp
+@php
+    $editing = $asset->exists;
+    $field = fn ($n, $default = null) => old($n, $asset->{$n} instanceof \Carbon\Carbon ? $asset->{$n}->format('Y-m-d') : ($asset->{$n} ?? $default));
+    $input = 'w-full rounded-lg border-gray-300';
+    $deptInit = old('department', $asset->department ?: (\App\Models\Asset::restrictedDepartment() ?: ($editing ? '' : 'IT')));
+@endphp
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $editing ? 'Edit Aset '.$asset->code : 'Tambah Aset' }}</h2>
@@ -8,14 +13,11 @@
         <div class="w-full px-4 sm:px-6 lg:px-8">
             <form method="POST" action="{{ $editing ? route('assets.update', $asset) : route('assets.store') }}"
                   enctype="multipart/form-data"
+                  x-data="{ dept: @js($deptInit), type: @js($field('type')), cats: @js(\App\Models\Asset::GA_CATEGORIES), sub: @js($field('subcategory')) }"
                   class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
                 @if ($editing) @method('PUT') @endif
 
-                @php
-                    $field = fn ($n, $default = null) => old($n, $asset->{$n} instanceof \Carbon\Carbon ? $asset->{$n}->format('Y-m-d') : ($asset->{$n} ?? $default));
-                    $input = 'w-full rounded-lg border-gray-300';
-                @endphp
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Perangkat</label>
@@ -25,23 +27,41 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Jenis</label>
-                    <select name="type" required class="{{ $input }}">
+                    <select name="type" required x-model="type" class="{{ $input }}">
                         <option value="">Pilih jenis</option>
-                        @foreach (\App\Models\Asset::TYPES as $t)
-                            <option value="{{ $t }}" @selected($field('type') === $t)>{{ $t }}</option>
+                        @foreach (\App\Models\Asset::typeOptions() as $group => $list)
+                            <optgroup label="{{ $group }}">
+                                @foreach ($list as $t)
+                                    <option value="{{ $t }}" @selected($field('type') === $t)>{{ $t }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
                     @error('type') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
+                <div x-show="dept !== 'IT' && (cats[type] || []).length" x-cloak>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Subkategori</label>
+                    <select name="subcategory" :disabled="dept === 'IT' || !(cats[type] || []).length" x-model="sub" class="{{ $input }}">
+                        <option value="">Pilih subkategori</option>
+                        <template x-for="s in (cats[type] || [])" :key="s"><option :value="s" x-text="s" :selected="s === sub"></option></template>
+                    </select>
+                    @error('subcategory') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Departemen Pemilik</label>
-                    <select name="department" @required(!$editing) class="{{ $input }}">
+                    @if ($restrictedDept = \App\Models\Asset::restrictedDepartment())
+                        <input type="hidden" name="department" value="{{ $restrictedDept }}">
+                        <div class="{{ $input }} border px-3 py-2 bg-gray-50 text-gray-700">{{ \App\Models\Asset::DEPARTMENTS[$restrictedDept] ?? $restrictedDept }} ({{ $restrictedDept }})</div>
+                    @else
+                    <select name="department" @required(!$editing) x-model="dept" class="{{ $input }}">
                         <option value="">Pilih departemen</option>
                         @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
                             <option value="{{ $k }}" @selected($field('department', $editing ? null : 'IT') === $k)>{{ $v }} ({{ $k }})</option>
                         @endforeach
                     </select>
+                    @endif
                     @error('department') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
@@ -100,7 +120,7 @@
                     </datalist>
                 </div>
 
-                <div class="md:col-span-2 border-t pt-4">
+                <div class="md:col-span-2 border-t pt-4" x-show="dept === 'IT'" x-cloak>
                     <div class="text-sm font-semibold text-gray-800 mb-2">Spesifikasi</div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -122,6 +142,65 @@
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi lain</label>
                             <textarea name="spec_other" rows="2" class="{{ $input }}" placeholder="contoh: layar 14 inci, GPU, port, kapasitas toner, dan sebagainya">{{ $field('spec_other') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 border-t pt-4">
+                    <div class="text-sm font-semibold text-gray-800 mb-2">Perolehan dan Kondisi <span class="text-xs font-normal text-gray-400">(untuk aset GA / Logistik)</span></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                            <select name="asset_class" class="{{ $input }}">
+                                <option value="">-</option>
+                                @foreach (\App\Models\Asset::ASSET_CLASSES as $k => $v)
+                                    <option value="{{ $k }}" @selected($field('asset_class') === $k)>{{ $v }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+                            <input type="number" min="1" name="qty" value="{{ $field('qty', 1) }}" class="{{ $input }}">
+                            @error('qty') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Harga perolehan per unit (Rp)</label>
+                            <input type="number" step="0.01" min="0" name="acquisition_amount" value="{{ $field('acquisition_amount') }}" class="{{ $input }}">
+                            @error('acquisition_amount') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. aset lama</label>
+                            <input name="old_asset_no" value="{{ $field('old_asset_no') }}" class="{{ $input }}" placeholder="contoh: 20/03/02/Smd/04/23/004A">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Status PPN</label>
+                            <input name="vat_status" value="{{ $field('vat_status') }}" class="{{ $input }}">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kondisi</label>
+                            <textarea name="condition_note" rows="2" class="{{ $input }}" placeholder="contoh: Baik / Korosi pada permukaan luar tangki">{{ $field('condition_note') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 border-t pt-4">
+                    <div class="text-sm font-semibold text-gray-800 mb-2">Disposal <span class="text-xs font-normal text-gray-400">(diisi bila aset dilepas)</span></div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                            <input type="date" name="disposed_at" value="{{ $field('disposed_at') }}" class="{{ $input }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alasan</label>
+                            <input name="disposal_reason" value="{{ $field('disposal_reason') }}" class="{{ $input }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. BA</label>
+                            <input name="disposal_ba_no" value="{{ $field('disposal_ba_no') }}" class="{{ $input }}">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nilai (Rp)</label>
+                            <input type="number" step="0.01" min="0" name="disposal_amount" value="{{ $field('disposal_amount') }}" class="{{ $input }}">
                         </div>
                     </div>
                 </div>
