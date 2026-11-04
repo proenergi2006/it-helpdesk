@@ -93,8 +93,12 @@
             @endif
         @endif
 
-        <div class="text-center">
-            <a href="{{ route('assets.scan', $asset->code) }}" class="text-sm text-blue-600 hover:underline">Kembali ke info aset</a>
+        <div class="text-center space-y-2">
+            @if ($asset->isManageableBy(auth()->user()))
+                <a href="{{ route('assets.show', $asset) }}" class="block w-full text-center bg-white ring-1 ring-gray-300 hover:bg-gray-50 text-gray-800 px-4 py-3 rounded-xl font-semibold">Lihat Detail Aset</a>
+            @else
+                <a href="{{ route('assets.scan', $asset->code) }}" class="text-sm text-blue-600 hover:underline">Kembali ke info aset</a>
+            @endif
         </div>
     </div>
     @vite('resources/js/app.js')

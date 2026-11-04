@@ -200,15 +200,16 @@ class AssetController extends Controller
         return view('assets.labels', compact('assets'));
     }
 
-    // Hasil scan QR (publik): IT yang sudah login -> detail aset, selain itu -> halaman aset
+    // Hasil scan QR (publik): petugas yang sudah login -> form cek kondisi, selain itu -> halaman aset
     // publik yang hanya menampilkan kode, nama, dan pemegang aset
     public function scan(string $code)
     {
         // tanpa pembatasan departemen: halaman publik harus bisa menampilkan aset mana pun
         $asset = Asset::withoutGlobalScopes()->byCode($code)->firstOrFail();
 
+        // petugas (IT / GA / Logistik) langsung ke form cek kondisi; detail lengkap ada di tombol di halaman itu
         if (Auth::check() && $asset->isManageableBy(Auth::user())) {
-            return redirect()->route('assets.show', $asset);
+            return redirect()->route('assets.scan.check', $asset->code);
         }
 
         return view('assets.public', compact('asset'));
