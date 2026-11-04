@@ -198,6 +198,11 @@ class Asset extends Model
         'receipt' => 'Tanda terima user (PDF)',
     ];
 
+    public function checks()
+    {
+        return $this->hasMany(AssetCheck::class)->latest('id');
+    }
+
     public function documents()
     {
         return $this->hasMany(AssetDocument::class);

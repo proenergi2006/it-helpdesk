@@ -39,6 +39,10 @@
                 </div>
             </dl>
 
+            <a href="{{ route('assets.scan.check', $asset->code) }}"
+               class="block w-full text-center bg-sky-500 hover:bg-sky-600 text-white px-4 py-3 rounded-xl font-semibold">
+                Cek Kondisi Aset (Audit)
+            </a>
             <a href="{{ route('assets.scan.ticket', $asset->code) }}"
                class="block w-full text-center bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl font-semibold">
                 Laporkan Masalah Perangkat Ini

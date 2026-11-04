@@ -134,7 +134,7 @@ class AssetController extends Controller
             'user',
             'tickets' => fn ($q) => $q->with('takenByUser')->limit(50),
             'repairs.parts', 'repairs.creator', 'repairs.ticket', 'repairs.photos',
-            'mutations.creator', 'documents',
+            'mutations.creator', 'documents', 'checks.checker',
         ]);
 
         $users = $this->users();
@@ -212,6 +212,43 @@ class AssetController extends Controller
         }
 
         return view('assets.public', compact('asset'));
+    }
+
+    // Cek kondisi aset dari hasil scan QR: kondisi, lokasi, ruangan. Tersimpan sebagai riwayat dan terlihat di detail aset.
+    public function checkForm(string $code)
+    {
+        $asset = Asset::withoutGlobalScopes()->byCode($code)->firstOrFail();
+        $last = $asset->checks()->with('checker')->first();
+
+        return view('assets.check', compact('asset', 'last'));
+    }
+
+    public function checkStore(Request $request, string $code)
+    {
+        $asset = Asset::withoutGlobalScopes()->byCode($code)->firstOrFail();
+
+        $data = $request->validate([
+            'condition' => ['required', Rule::in(array_keys(\App\Models\AssetCheck::CONDITIONS))],
+            'cabang'    => ['required', 'string', 'max:50'],
+            'room'      => ['nullable', 'string', 'max:150'],
+            'note'      => ['nullable', 'string', 'max:1000'],
+        ], ['condition.required' => 'Pilih kondisi aset.', 'cabang.required' => 'Pilih lokasi (cabang).']);
+
+        $mismatch = ($asset->cabang && $asset->cabang !== $data['cabang'])
+            || (filled($asset->location) && filled($data['room']) && mb_strtolower(trim($asset->location)) !== mb_strtolower(trim($data['room'])));
+
+        $check = $asset->checks()->create($data + ['location_mismatch' => $mismatch, 'checked_by' => Auth::id()]);
+
+        // sekaligus dihitung terverifikasi pada opname yang sedang berjalan (bila user berhak mengelola aset ini)
+        $audit = $asset->isManageableBy(Auth::user()) ? \App\Models\AssetAudit::current() : null;
+        if ($audit && $audit->isOpen() && $audit->assetsInScope()->whereKey($asset->id)->exists()) {
+            $audit->items()->firstOrCreate(
+                ['asset_id' => $asset->id],
+                ['scanned_by' => Auth::id(), 'scanned_at' => now(), 'note' => 'Cek kondisi: '.$check->condition_label]
+            );
+        }
+
+        return redirect()->route('assets.scan.check', $asset->code)->with('checked', $check->id);
     }
 
     // Tombol "Buat Tiket" di halaman depan: wajib login, lalu form tiket terbuka dengan aset terisi

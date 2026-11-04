@@ -217,7 +217,7 @@
             {{-- Riwayat --}}
             <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100" x-data="{ tab: @js($startTab) }">
                 <div class="border-b border-gray-100 px-3 sm:px-5 flex gap-1 overflow-x-auto">
-                    @foreach (['tiket' => ['Tiket', $asset->tickets->count()], 'perbaikan' => ['Perbaikan', $asset->repairs->count()], 'mutasi' => ['Mutasi', $asset->mutations->count()], 'dokumen' => ['Dokumen', $asset->document_count.'/4']] as $key => [$label, $count])
+                    @foreach (['tiket' => ['Tiket', $asset->tickets->count()], 'perbaikan' => ['Perbaikan', $asset->repairs->count()], 'mutasi' => ['Mutasi', $asset->mutations->count()], 'cek' => ['Cek Kondisi', $asset->checks->count()], 'dokumen' => ['Dokumen', $asset->document_count.'/4']] as $key => [$label, $count])
                         <button type="button" @click="tab = '{{ $key }}'"
                             :class="tab === '{{ $key }}' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'"
                             class="px-3 py-3 text-sm font-medium border-b-2 whitespace-nowrap">
@@ -514,6 +514,36 @@
                             <li class="ml-5 text-sm text-gray-500 py-4">Belum ada mutasi.</li>
                         @endforelse
                     </ol>
+                </div>
+
+                {{-- Tab Cek Kondisi --}}
+                <div x-show="tab === 'cek'" x-cloak class="p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <p class="text-sm text-gray-500">Hasil cek kondisi dari scan QR. Perbedaan lokasi ditandai untuk ditindaklanjuti.</p>
+                        <a href="{{ route('assets.scan.check', $asset->code) }}" class="px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-500 text-sm font-medium shrink-0">Cek Kondisi Sekarang</a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-left text-gray-500 border-b">
+                                <tr><th class="py-2 pr-4">Waktu</th><th class="py-2 pr-4">Kondisi</th><th class="py-2 pr-4">Lokasi</th><th class="py-2 pr-4">Dicek oleh</th><th class="py-2">Catatan</th></tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                @forelse ($asset->checks as $c)
+                                    <tr>
+                                        <td class="py-2 pr-4 whitespace-nowrap">{{ $c->created_at->format('d M Y H:i') }}</td>
+                                        <td class="py-2 pr-4"><span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 {{ $c->condition_badge }}">{{ $c->condition_label }}</span></td>
+                                        <td class="py-2 pr-4">{{ $c->cabang }}{{ $c->room ? ' · '.$c->room : '' }}
+                                            @if ($c->location_mismatch)<span class="ml-1 inline-flex rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200 px-2 py-0.5 text-xs">Beda dari data</span>@endif
+                                        </td>
+                                        <td class="py-2 pr-4">{{ $c->checker?->name ?? '-' }}</td>
+                                        <td class="py-2 text-gray-600">{{ $c->note ?: '-' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada cek kondisi.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 {{-- Tab Dokumen --}}

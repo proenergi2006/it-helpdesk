@@ -108,6 +108,9 @@ Route::put('/my-tickets/{id}', [TicketController::class, 'updateMyTicket'])->nam
 // Hasil scan QR aset: publik, hanya menampilkan kode, nama, dan pemegang aset
 Route::get('/assets/scan/{code}', [\App\Http\Controllers\AssetController::class, 'scan'])->name('assets.scan');
 Route::middleware('auth')->get('/assets/scan/{code}/ticket', [\App\Http\Controllers\AssetController::class, 'scanTicket'])->name('assets.scan.ticket');
+// Cek kondisi aset saat scan (audit): wajib login, bisa dikirim oleh user mana pun
+Route::middleware('auth')->get('/assets/scan/{code}/check', [\App\Http\Controllers\AssetController::class, 'checkForm'])->name('assets.scan.check');
+Route::middleware('auth')->post('/assets/scan/{code}/check', [\App\Http\Controllers\AssetController::class, 'checkStore'])->name('assets.scan.check.store');
 
 // Modul aset: IT (semua departemen), GA dan Logistik (hanya departemen sendiri)
 Route::middleware(['auth', 'role:it,ga,logistik'])->group(function () {
