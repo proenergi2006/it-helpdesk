@@ -21,6 +21,7 @@
                     <li>Kolom <strong>no_aset_accurate</strong> opsional. Jika nomor sudah ada di Service Management, data aset itu diperbarui (tidak dibuat dobel).</li>
                     <li>Kolom status: aktif, dipinjam, rusak, diperbaiki, disposal. Tanggal format <code>2024-03-15</code>.</li>
                     <li>Aset GA / Logistik: gunakan kolom <strong>kategori</strong> (atau jenis) dan <strong>subkategori</strong>, <strong>kelas</strong> (asset / inventory), <strong>jumlah</strong>, <strong>harga_satuan</strong>, <strong>kondisi</strong>, <strong>no_aset_lama</strong>, <strong>status_ppn</strong>, dan kolom disposal. User GA dan Logistik hanya bisa mengimpor aset departemennya sendiri.</li>
+                    <li>Hasil <strong>Export Excel</strong> dari daftar aset bisa diedit lalu diimpor kembali: kolom <strong>kode_aset</strong> yang terisi memperbarui aset yang sama (perubahan cabang/lokasi/pengguna dicatat sebagai mutasi). Kolom <strong>tanpa_serial</strong> diisi <em>ya</em> untuk perangkat yang memang tidak punya serial number.</li>
                     <li>Format file: .xlsx, .xls, atau .csv (maksimal 5 MB).</li>
                 </ol>
 

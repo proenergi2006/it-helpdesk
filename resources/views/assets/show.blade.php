@@ -92,7 +92,13 @@
                             @endif
                             <a href="{{ route('welcome', ['open_ticket' => 1, 'asset' => $asset->code]) }}" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 text-sm font-medium">Buat Tiket</a>
                             <a href="{{ route('assets.labels', ['ids' => [$asset->id]]) }}" target="_blank" class="px-4 py-2 rounded-lg bg-white ring-1 ring-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-700">Cetak Label QR</a>
+                            <a href="{{ route('assets.copy', $asset) }}" class="px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100 text-sm font-medium" title="Buat aset baru dengan spesifikasi yang sama">Salin</a>
+                            <a href="{{ route('assets.create') }}" class="px-4 py-2 rounded-lg bg-white ring-1 ring-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-700">Tambah Baru</a>
                             <a href="{{ route('assets.edit', $asset) }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm font-medium">Edit</a>
+                            <form method="POST" action="{{ route('assets.destroy', $asset) }}" onsubmit="return confirm('Hapus aset {{ $asset->code }}? Tindakan ini tidak bisa dibatalkan.')">
+                                @csrf @method('DELETE')
+                                <button class="px-4 py-2 rounded-lg bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100 text-sm font-medium">Hapus</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -130,7 +136,7 @@
                                 'Subkategori' => $asset->subcategory,
                                 'Merk' => $asset->brand,
                                 'Model' => $asset->model,
-                                'Serial Number' => $asset->serial_number,
+                                'Serial Number' => $asset->serial_number ?: ($asset->no_serial ? 'Tanpa serial number' : null),
                                 'No. Aset Accurate' => $asset->accurate_no,
                             ],
                             'Penempatan' => [

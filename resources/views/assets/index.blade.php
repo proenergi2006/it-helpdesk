@@ -7,6 +7,7 @@
                 <a href="{{ route('assets.audits.index') }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Opname</a>
                 <a href="{{ route('assets.reconcile') }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Cocokkan Accurate</a>
                 <a href="{{ route('assets.import') }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Import</a>
+                <a href="{{ route('assets.export', request()->query()) }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm" title="Unduh semua aset sesuai filter ke Excel">Export Excel</a>
                 <a href="{{ route('assets.create') }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm">Tambah Aset</a>
             </div>
         </div>
@@ -21,7 +22,7 @@
                 <div class="p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">{{ session('error') }}</div>
             @endif
 
-            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-7 gap-3">
+            <form method="GET" class="bg-white p-4 rounded-lg shadow grid grid-cols-1 md:grid-cols-4 xl:grid-cols-8 gap-3">
                 <input name="q" value="{{ request('q') }}" placeholder="Cari kode, no. Accurate, nama, serial, pengguna..."
                        class="rounded-lg border-gray-300 md:col-span-2">
                 <select name="type" class="rounded-lg border-gray-300">
@@ -40,9 +41,15 @@
                     <option value="purchase_desc" @selected(request('sort') === 'purchase_desc')>Beli terbaru dulu</option>
                 </select>
                 <select name="department" class="rounded-lg border-gray-300 @if (\App\Models\Asset::restrictedDepartment()) hidden @endif">
-                    <option value="">Semua dept.</option>
+                    <option value="">Semua dept. pemilik</option>
                     @foreach (\App\Models\Asset::DEPARTMENTS as $k => $v)
                         <option value="{{ $k }}" @selected(request('department') === $k)>{{ $v }}</option>
+                    @endforeach
+                </select>
+                <select name="user_department" class="rounded-lg border-gray-300">
+                    <option value="">Semua dept. pengguna</option>
+                    @foreach ($userDepartments as $ud)
+                        <option value="{{ $ud }}" @selected(request('user_department') === $ud)>{{ $ud }}</option>
                     @endforeach
                 </select>
                 <select name="cabang" class="rounded-lg border-gray-300">
@@ -57,23 +64,68 @@
                         <option value="{{ $k }}" @selected(request('status') === $k)>{{ $v }}</option>
                     @endforeach
                 </select>
-                <div class="md:col-span-5 flex gap-2">
+                <div class="md:col-span-4 xl:col-span-8 flex gap-2">
                     <button class="rounded-lg bg-gray-900 text-white px-4 py-2 hover:bg-gray-800">Terapkan</button>
                     <a href="{{ route('assets.index') }}" class="rounded-lg bg-gray-100 px-4 py-2 hover:bg-gray-200">Reset</a>
                 </div>
             </form>
 
-            <form method="GET" action="{{ route('assets.labels') }}" target="_blank">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="text-sm text-gray-500">{{ $assets->total() }} aset</div>
-                    <button class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 text-sm">Cetak Label QR (yang dipilih)</button>
+            <form method="POST" action="{{ route('assets.labels') }}" id="bulk"
+                  x-data="{ n: 0, panel: null, sync() { this.n = document.querySelectorAll('.pick:checked').length } }" @change="sync()">
+                @csrf
+                <div class="mb-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="text-sm text-gray-500">{{ $assets->total() }} aset <span x-show="n > 0" x-cloak>· <strong class="text-gray-800" x-text="n + ' dipilih'"></strong></span></div>
+                        <div class="flex flex-wrap items-center gap-2" :class="n === 0 ? 'opacity-50' : ''">
+                            <button type="submit" formaction="{{ route('assets.labels') }}" formtarget="_blank" :disabled="n === 0" class="px-3 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 text-sm disabled:cursor-not-allowed">Cetak Label QR</button>
+                            <button type="submit" formaction="{{ route('assets.export') }}" :disabled="n === 0" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm disabled:cursor-not-allowed">Export Terpilih</button>
+                            <button type="button" @click="panel = panel === 'status' ? null : 'status'" :disabled="n === 0" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm disabled:cursor-not-allowed">Ubah Status</button>
+                            <button type="button" @click="panel = panel === 'mutate' ? null : 'mutate'" :disabled="n === 0" class="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm disabled:cursor-not-allowed">Pindahkan (Mutasi)</button>
+                            <button type="submit" formaction="{{ route('assets.bulk.delete') }}" :disabled="n === 0"
+                                    onclick="return confirm('Hapus aset yang dipilih? Aset yang sudah punya tiket, perbaikan, atau opname tidak akan dihapus. Tindakan ini tidak bisa dibatalkan.')"
+                                    class="px-3 py-2 rounded-lg bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100 text-sm disabled:cursor-not-allowed">Hapus</button>
+                        </div>
+                    </div>
+
+                    <div x-show="panel === 'status'" x-cloak class="mt-3 bg-white rounded-lg shadow p-4 flex flex-wrap items-end gap-3">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Status baru</label>
+                            <select name="status" class="rounded-lg border-gray-300 text-sm">
+                                @foreach (\App\Models\Asset::STATUSES as $k => $v)<option value="{{ $k }}">{{ $v }}</option>@endforeach
+                            </select>
+                        </div>
+                        <button type="submit" formaction="{{ route('assets.bulk.status') }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm">Terapkan ke yang dipilih</button>
+                    </div>
+
+                    <div x-show="panel === 'mutate'" x-cloak class="mt-3 bg-white rounded-lg shadow p-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Cabang tujuan</label>
+                            <select name="cabang" class="w-full rounded-lg border-gray-300 text-sm">
+                                <option value="">(tidak diubah)</option>
+                                @foreach (\App\Models\Asset::CABANG as $c)<option value="{{ $c }}">{{ $c }}</option>@endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Lokasi / ruangan</label>
+                            <input name="location" class="w-full rounded-lg border-gray-300 text-sm" placeholder="(tidak diubah)">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Departemen pengguna</label>
+                            <input name="user_department" class="w-full rounded-lg border-gray-300 text-sm" placeholder="(tidak diubah)">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Alasan mutasi</label>
+                            <input name="reason" class="w-full rounded-lg border-gray-300 text-sm" placeholder="wajib diisi">
+                        </div>
+                        <button type="submit" formaction="{{ route('assets.bulk.mutate') }}" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 text-sm">Pindahkan</button>
+                    </div>
                 </div>
 
                 <div class="bg-white rounded-lg shadow overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-50 border-b">
                             <tr>
-                                <th class="px-4 py-3"><input type="checkbox" onclick="document.querySelectorAll('.pick').forEach(c => c.checked = this.checked)"></th>
+                                <th class="px-4 py-3"><input type="checkbox" onclick="document.querySelectorAll('.pick').forEach(c => c.checked = this.checked); this.form.dispatchEvent(new Event('change', {bubbles: true}))"></th>
                                 <th class="text-left px-4 py-3">Kode</th>
                                 <th class="text-left px-4 py-3">Nama</th>
                                 <th class="text-left px-4 py-3">Jenis</th>
@@ -129,6 +181,8 @@
                                         <a href="{{ route('assets.show', $a) }}" class="text-blue-600 hover:underline">Detail</a>
                                         <span class="text-gray-300 mx-1">|</span>
                                         <a href="{{ route('assets.edit', $a) }}" class="text-gray-600 hover:underline">Edit</a>
+                                        <span class="text-gray-300 mx-1">|</span>
+                                        <a href="{{ route('assets.copy', $a) }}" class="text-indigo-600 hover:underline" title="Buat aset baru dengan spesifikasi yang sama">Salin</a>
                                     </td>
                                 </tr>
                             @empty

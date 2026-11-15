@@ -25,9 +25,10 @@ class AssetController extends Controller
         'tanggal_disposal', 'alasan_disposal', 'no_ba_disposal', 'nilai_disposal',
     ];
 
-    public function index(Request $request)
+    // Filter daftar aset (dipakai halaman daftar dan export)
+    private function filtered(Request $request)
     {
-        $q = Asset::query()->with('user')->withCount('tickets')->orderByDesc('id');
+        $q = Asset::query()->orderByDesc('id');
 
         if ($request->filled('q')) {
             $term = '%'.$request->q.'%';
@@ -41,7 +42,7 @@ class AssetController extends Controller
                 ->orWhere('user_name', 'like', $term)
                 ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)));
         }
-        foreach (['type', 'cabang', 'status', 'department'] as $f) {
+        foreach (['type', 'cabang', 'status', 'department', 'user_department'] as $f) {
             if ($request->filled($f)) {
                 $q->where($f, $request->input($f));
             }
@@ -52,9 +53,15 @@ class AssetController extends Controller
             $q->reorder()->orderByRaw('purchase_date is null')->orderBy('purchase_date', $sort === 'purchase_asc' ? 'asc' : 'desc')->orderBy('id');
         }
 
-        $assets = $q->with('documents')->paginate(20)->withQueryString();
+        return $q;
+    }
 
-        return view('assets.index', compact('assets'));
+    public function index(Request $request)
+    {
+        $assets = $this->filtered($request)->with(['user', 'documents'])->withCount('tickets')->paginate(20)->withQueryString();
+        $userDepartments = Asset::query()->whereNotNull('user_department')->distinct()->orderBy('user_department')->pluck('user_department');
+
+        return view('assets.index', compact('assets', 'userDepartments'));
     }
 
     public function dashboard()
@@ -83,7 +90,7 @@ class AssetController extends Controller
             'byStatus'     => Asset::selectRaw('status as label, count(*) as total')->groupBy('status')->pluck('total', 'label'),
             'byType'       => $group('type'),
             'byCabang'     => $group('cabang'),
-            'byDepartment' => $group('department'),
+            'byDepartment' => $group('user_department'),
             'warrantyExpired'  => $live()->whereNotNull('warranty_until')->where('warranty_until', '<', $today)->count(),
             'warrantySoon'     => $live()->whereBetween('warranty_until', [$today, $today->copy()->addDays(60)])->orderBy('warranty_until')->limit(8)->get(),
             'repairsMonth'     => \App\Models\AssetRepair::whereHas('asset')->where('repaired_at', '>=', now()->startOfMonth())->count(),
@@ -98,7 +105,8 @@ class AssetController extends Controller
             'auditDone'        => $auditDone,
             'noHolder'         => $live()->whereNull('user_id')->whereNull('user_name')->count(),
             'noPhoto'          => $live()->whereNull('photo_path')->count(),
-            'noDepartment'     => $live()->whereNull('department')->count(),
+            'noDepartment'     => $live()->whereNull('user_department')->count(),
+            'noSerial'         => $live()->whereNull('serial_number')->where('no_serial', false)->count(),
             'noAccurate'       => $live()->whereNull('accurate_no')->count(),
             'docIncomplete'    => $live()->where(fn ($q) => $q->whereNull('photo_path')
                 ->orWhereRaw('(select count(*) from asset_documents d where d.asset_id = assets.id) < 3'))->count(),
@@ -125,7 +133,16 @@ class AssetController extends Controller
             }
         }
 
-        return redirect()->route('assets.show', $asset)->with('success', 'Aset berhasil ditambahkan.');
+        $msg = "Aset {$asset->code} berhasil ditambahkan.";
+        // tombol "Simpan & Tambah Baru" / "Simpan & Salin": lanjut input tanpa kembali ke daftar
+        if ($request->input('then') === 'new') {
+            return redirect()->route('assets.create')->with('success', $msg);
+        }
+        if ($request->input('then') === 'copy') {
+            return redirect()->route('assets.copy', $asset)->with('success', $msg.' Silakan lengkapi salinannya.');
+        }
+
+        return redirect()->route('assets.show', $asset)->with('success', $msg);
     }
 
     public function show(Asset $asset)
@@ -178,14 +195,162 @@ class AssetController extends Controller
         return redirect()->route('assets.show', $asset)->with('success', 'Aset berhasil diperbarui.');
     }
 
-    public function destroy(Asset $asset)
+    // Salin aset: form tambah terisi dari aset sumber. Data unik dan lokasi dikosongkan agar diisi untuk cabang lain.
+    public function copy(Asset $asset)
     {
-        if ($asset->tickets()->exists()) {
-            return back()->with('error', 'Aset sudah punya riwayat tiket, tidak bisa dihapus. Ubah statusnya menjadi Disposal.');
+        $new = $asset->replicate([
+            'code', 'legacy_code', 'serial_number', 'accurate_no', 'old_asset_no', 'photo_path', 'user_id', 'user_name',
+            'cabang', 'location', 'user_department', 'status', 'disposed_at', 'disposal_reason', 'disposal_ba_no', 'disposal_amount', 'no_serial',
+        ]);
+        $new->status = 'aktif';
+
+        return view('assets.form', ['asset' => $new, 'users' => $this->users(), 'copyOf' => $asset]);
+    }
+
+    // Export ke Excel dengan kolom yang sama dengan template import, kolom pertama = kode aset.
+    // Setelah diedit di Excel, file bisa diimpor kembali dan memperbarui aset berdasarkan kode aset.
+    public function export(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids'), 'is_numeric');
+        $query = $ids ? Asset::whereIn('id', $ids)->orderBy('id') : $this->filtered($request)->reorder()->orderBy('id');
+
+        $ws = ($book = new Spreadsheet())->getActiveSheet();
+        $ws->setTitle('Aset');
+        $headers = array_merge(['kode_aset'], self::IMPORT_HEADERS, ['tanpa_serial']);
+        $ws->fromArray([$headers]);
+
+        $row = 2;
+        foreach ($query->with('user')->cursor() as $a) {
+            $d = fn ($v) => $v?->format('Y-m-d');
+            $ws->fromArray([[
+                $a->code, $a->accurate_no, $a->department, $a->name, $a->type, $a->brand, $a->model, $a->serial_number, $a->cabang, $a->location,
+                $a->holder_name, $a->user_department, $a->status, $d($a->purchase_date), $d($a->warranty_until),
+                $a->spec_cpu, $a->spec_ram, $a->spec_storage, $a->spec_os, $a->spec_other, $a->notes,
+                $a->subcategory, $a->old_asset_no, $a->asset_class, $a->qty, $a->acquisition_amount, $a->condition_note, $a->vat_status,
+                $d($a->disposed_at), $a->disposal_reason, $a->disposal_ba_no, $a->disposal_amount, $a->no_serial ? 'ya' : '',
+            ]], null, 'A'.$row++);
         }
 
-        $this->deletePhoto($asset);
-        $asset->delete();
+        $ws->getStyle('A1:'.\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers)).'1')->applyFromArray([
+            'font' => ['bold' => true], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FED7AA']],
+        ]);
+        $ws->freezePane('B2');
+        foreach (range(1, count($headers)) as $c) {
+            $ws->getColumnDimensionByColumn($c)->setAutoSize(true);
+        }
+
+        return response()->streamDownload(function () use ($book) {
+            (new Xlsx($book))->save('php://output');
+        }, 'aset-'.now()->format('Ymd-His').'.xlsx');
+    }
+
+    // ---- Aksi massal dari daftar aset ----
+
+    private function pickedAssets(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids'), 'is_numeric');
+        abort_if(empty($ids), 422, 'Pilih minimal satu aset.');
+
+        return Asset::whereIn('id', $ids)->get();
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $request->validate(['status' => ['required', Rule::in(array_keys(Asset::STATUSES))]]);
+        $assets = $this->pickedAssets($request);
+        Asset::whereIn('id', $assets->pluck('id'))->update(['status' => $request->status]);
+
+        return back()->with('success', $assets->count().' aset diubah statusnya menjadi '.Asset::STATUSES[$request->status].'.');
+    }
+
+    // Pindahkan banyak aset sekaligus; kolom yang dikosongkan tidak diubah. Tiap aset dicatat di riwayat mutasi.
+    public function bulkMutate(Request $request)
+    {
+        $data = $request->validate([
+            'cabang'          => ['nullable', 'string', 'max:50'],
+            'location'        => ['nullable', 'string', 'max:150'],
+            'user_department' => ['nullable', 'string', 'max:150'],
+            'reason'          => ['required', 'string', 'max:255'],
+        ], ['reason.required' => 'Alasan mutasi wajib diisi.']);
+
+        if (!filled($data['cabang'] ?? null) && !filled($data['location'] ?? null) && !filled($data['user_department'] ?? null)) {
+            return back()->with('error', 'Isi minimal satu tujuan: cabang, lokasi, atau departemen pengguna.');
+        }
+
+        $moved = 0;
+        foreach ($this->pickedAssets($request) as $a) {
+            $moved += (int) $a->mutateTo([
+                'cabang'          => filled($data['cabang'] ?? null) ? $data['cabang'] : $a->cabang,
+                'location'        => filled($data['location'] ?? null) ? $data['location'] : $a->location,
+                'user_id'         => $a->user_id,
+                'user_name'       => $a->user_name,
+                'user_department' => filled($data['user_department'] ?? null) ? $data['user_department'] : $a->user_department,
+            ], $data['reason'], null, Auth::id());
+        }
+
+        return back()->with('success', "{$moved} aset dipindahkan dan dicatat di riwayat mutasi.");
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $deleted = 0;
+        $blocked = [];
+        foreach ($this->pickedAssets($request) as $a) {
+            if ($reason = $this->deleteBlocker($a)) {
+                $blocked[] = "{$a->code} ({$reason})";
+                continue;
+            }
+            $this->removeAsset($a);
+            $deleted++;
+        }
+
+        $msg = "{$deleted} aset dihapus.";
+        if ($blocked) {
+            $msg .= ' Tidak bisa dihapus: '.implode('; ', array_slice($blocked, 0, 5)).(count($blocked) > 5 ? '; ...' : '').'. Ubah statusnya menjadi Disposal.';
+        }
+
+        return back()->with($deleted ? 'success' : 'error', $msg);
+    }
+
+    // Aset yang sudah punya riwayat kerja tidak boleh dihapus agar jejak audit tetap ada
+    private function deleteBlocker(Asset $a): ?string
+    {
+        if ($a->tickets()->exists()) {
+            return 'sudah ada tiket';
+        }
+        if ($a->repairs()->exists()) {
+            return 'sudah ada perbaikan';
+        }
+        if (\App\Models\AssetAuditItem::where('asset_id', $a->id)->exists()) {
+            return 'sudah masuk opname';
+        }
+
+        return null;
+    }
+
+    private function removeAsset(Asset $a): void
+    {
+        $disk = \Illuminate\Support\Facades\Storage::disk('local');
+        foreach ($a->documents as $doc) {
+            $disk->delete($doc->path);
+        }
+        foreach ($a->mutations as $m) {
+            $disk->delete(array_filter([$m->photo_path, $m->receipt_path]));
+        }
+        $a->documents()->delete();
+        $a->mutations()->delete();
+        $a->checks()->delete();
+        $this->deletePhoto($a);
+        $a->delete();
+    }
+
+    public function destroy(Asset $asset)
+    {
+        if ($reason = $this->deleteBlocker($asset)) {
+            return back()->with('error', "Aset tidak bisa dihapus ({$reason}). Ubah statusnya menjadi Disposal.");
+        }
+
+        $this->removeAsset($asset);
 
         return redirect()->route('assets.index')->with('success', 'Aset dihapus.');
     }
@@ -327,7 +492,19 @@ class AssetController extends Controller
             }
 
             $accurateNo = $this->cleanAccurateNo($data['no_aset_accurate'] ?? '');
-            $existing = $accurateNo ? Asset::where('accurate_no', $accurateNo)->first() : null;
+
+            // kolom kode_aset (dari hasil export) memperbarui aset yang sama; selain itu dicocokkan lewat No. Accurate
+            $kode = $data['kode_aset'] ?? '';
+            $existing = null;
+            if ($kode !== '') {
+                $existing = Asset::byCode($kode)->first();
+                if (!$existing) {
+                    $skipped[] = "baris {$line}: kode aset {$kode} tidak ditemukan";
+                    continue;
+                }
+            } elseif ($accurateNo) {
+                $existing = Asset::where('accurate_no', $accurateNo)->first();
+            }
             if ($accurateNo && !$existing && Asset::withoutGlobalScopes()->where('accurate_no', $accurateNo)->exists()) {
                 $skipped[] = "baris {$line}: no. aset {$accurateNo} sudah dipakai departemen lain";
                 continue;
@@ -355,6 +532,7 @@ class AssetController extends Controller
                 'brand'          => $data['merk'] ?? null ?: null,
                 'model'          => $data['model'] ?? null ?: null,
                 'serial_number'  => $serial ?: null,
+                'no_serial'      => $serial === '' && in_array(strtolower($data['tanpa_serial'] ?? ''), ['ya', 'y', 'yes', '1', 'true', 'tanpa'], true),
                 'cabang'         => ($data['cabang'] ?? '') ?: null,
                 'location'       => ($data['lokasi'] ?? '') ?: null,
                 'user_id'        => $holderUser?->id,
@@ -390,7 +568,10 @@ class AssetController extends Controller
             if ($existing) {
                 // sudah ada (No. Aset Accurate sama): perbarui data, tanpa membuat dobel.
                 // Kode aset tidak berubah.
-                $existing->update($attrs + ($dept ? ['department' => $dept] : []));
+                // perubahan cabang / lokasi / pengguna dicatat sebagai mutasi, bukan ditimpa diam-diam
+                $place = array_intersect_key($attrs, array_flip(['cabang', 'location', 'user_id', 'user_name', 'user_department']));
+                $existing->update(array_diff_key($attrs, $place) + ($dept ? ['department' => $dept] : []));
+                $existing->mutateTo($place, 'Perubahan lewat import', null, Auth::id());
                 $updated++;
             } else {
                 Asset::create($attrs + ['department' => $dept ?? 'IT', 'created_by' => Auth::id()]);
@@ -731,7 +912,19 @@ class AssetController extends Controller
             $request->merge(['department' => $restricted]);
         }
 
-        return $request->validate([
+        // jenis yang diketik sendiri
+        if ($request->input('type') === '__other') {
+            $request->validate(['type_other' => ['required', 'string', 'max:50']], ['type_other.required' => 'Ketik jenis aset.']);
+            $request->merge(['type' => trim($request->input('type_other'))]);
+        }
+        // "Tanpa serial number": kolom serial dikosongkan
+        if ($request->boolean('no_serial')) {
+            $request->merge(['serial_number' => null]);
+        }
+
+        $data = $request->validate([
+            'no_serial'      => ['nullable', 'boolean'],
+            'type_other'     => ['nullable', 'string', 'max:50'],
             'asset_class'    => ['nullable', Rule::in(array_keys(Asset::ASSET_CLASSES))],
             'old_asset_no'   => ['nullable', 'string', 'max:60'],
             'qty'            => ['nullable', 'integer', 'min:1', 'max:100000'],
@@ -777,5 +970,10 @@ class AssetController extends Controller
             'doc_serial.mimes'  => 'Foto serial number harus berformat JPG.',
             'doc_receipt.mimes' => 'Tanda terima harus berformat PDF.',
         ]);
+
+        $data['no_serial'] = $request->boolean('no_serial');
+        unset($data['type_other']);
+
+        return $data;
     }
 }

@@ -115,7 +115,12 @@ Route::middleware('auth')->post('/assets/scan/{code}/check', [\App\Http\Controll
 // Modul aset: IT (semua departemen), GA dan Logistik (hanya departemen sendiri)
 Route::middleware(['auth', 'role:it,ga,logistik'])->group(function () {
     Route::get('/assets/dashboard', [\App\Http\Controllers\AssetController::class, 'dashboard'])->name('assets.dashboard');
-    Route::get('/assets/labels', [\App\Http\Controllers\AssetController::class, 'labels'])->name('assets.labels');
+    Route::match(['get', 'post'], '/assets/labels', [\App\Http\Controllers\AssetController::class, 'labels'])->name('assets.labels');
+    Route::match(['get', 'post'], '/assets/export', [\App\Http\Controllers\AssetController::class, 'export'])->name('assets.export');
+    Route::post('/assets/bulk/status', [\App\Http\Controllers\AssetController::class, 'bulkStatus'])->name('assets.bulk.status');
+    Route::post('/assets/bulk/mutate', [\App\Http\Controllers\AssetController::class, 'bulkMutate'])->name('assets.bulk.mutate');
+    Route::post('/assets/bulk/delete', [\App\Http\Controllers\AssetController::class, 'bulkDelete'])->name('assets.bulk.delete');
+    Route::get('/assets/{asset}/copy', [\App\Http\Controllers\AssetController::class, 'copy'])->name('assets.copy');
     Route::get('/assets/import', [\App\Http\Controllers\AssetController::class, 'importForm'])->name('assets.import');
     Route::post('/assets/import', [\App\Http\Controllers\AssetController::class, 'import'])->name('assets.import.store');
     Route::get('/assets/import/template', [\App\Http\Controllers\AssetController::class, 'importTemplate'])->name('assets.import.template');

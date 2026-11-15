@@ -10,7 +10,8 @@ class Asset extends Model
 {
     public const TYPES = [
         'Laptop', 'PC / Desktop', 'Monitor', 'Printer', 'Scanner', 'Server',
-        'Switch', 'Router', 'Access Point', 'CCTV', 'UPS', 'Lainnya',
+        'Switch', 'Router', 'Access Point', 'CCTV', 'UPS',
+        'Mesin Absen', 'TV', 'Projector', 'Internet', 'Handphone', 'Lainnya',
     ];
 
     // Kategori aset tetap GA / Logistik => subkategori / contoh. Kolom type menyimpan kategori.
@@ -74,13 +75,14 @@ class Asset extends Model
     ];
 
     protected $fillable = [
-        'code', 'legacy_code', 'department', 'subcategory', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
+        'code', 'legacy_code', 'department', 'subcategory', 'no_serial', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
         'asset_class', 'old_asset_no', 'qty', 'acquisition_amount', 'condition_note', 'vat_status',
         'disposed_at', 'disposal_reason', 'disposal_ba_no', 'disposal_amount',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
     protected $casts = [
+        'no_serial'      => 'boolean',
         'purchase_date'  => 'date',
         'warranty_until' => 'date',
         'disposed_at'    => 'date',
@@ -89,9 +91,18 @@ class Asset extends Model
     // Pilihan jenis/kategori untuk dropdown: [grup => daftar]. GA / Logistik hanya melihat kategori GA.
     public static function typeOptions(): array
     {
-        return self::restrictedDepartment()
+        $groups = self::restrictedDepartment()
             ? ['Kategori' => self::gaTypes()]
             : ['IT' => self::TYPES, 'GA / Logistik' => self::gaTypes()];
+
+        // jenis yang pernah diketik sendiri ikut muncul agar bisa dipilih lagi dan dipakai sebagai filter
+        $custom = static::query()->whereNotNull('type')->distinct()->orderBy('type')->pluck('type')
+            ->reject(fn ($t) => in_array($t, array_merge(self::TYPES, self::gaTypes()), true))->values()->all();
+        if ($custom) {
+            $groups['Lainnya (diketik sendiri)'] = $custom;
+        }
+
+        return $groups;
     }
 
     // Departemen yang dibatasi untuk user yang sedang login (null = tidak dibatasi)

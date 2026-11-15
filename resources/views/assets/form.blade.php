@@ -11,12 +11,24 @@
 
     <div class="py-6">
         <div class="w-full px-4 sm:px-6 lg:px-8">
+            @if (session('success'))
+                <div class="mb-4 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200">{{ session('success') }}</div>
+            @endif
+            @if (session('error'))
+                <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200">{{ session('error') }}</div>
+            @endif
             <form method="POST" action="{{ $editing ? route('assets.update', $asset) : route('assets.store') }}"
                   enctype="multipart/form-data"
-                  x-data="{ dept: @js($deptInit), type: @js($field('type')), cats: @js(\App\Models\Asset::GA_CATEGORIES), sub: @js($field('subcategory')) }"
+                  x-data="{ dept: @js($deptInit), type: @js($field('type')), cats: @js(\App\Models\Asset::GA_CATEGORIES), sub: @js($field('subcategory')), noSerial: @js((bool) $field('no_serial')) }"
                   class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
                 @if ($editing) @method('PUT') @endif
+
+                @isset($copyOf)
+                    <div class="md:col-span-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm p-3">
+                        Salinan dari <strong>{{ $copyOf->code }}</strong> ({{ $copyOf->name }}). Serial number, No. Accurate, foto, cabang, lokasi, dan pemegang dikosongkan: isi untuk aset baru ini.
+                    </div>
+                @endisset
 
 
                 <div class="md:col-span-2">
@@ -36,7 +48,10 @@
                                 @endforeach
                             </optgroup>
                         @endforeach
+                        <option value="__other">Lainnya (ketik sendiri)…</option>
                     </select>
+                    <input name="type_other" x-show="type === '__other'" x-cloak value="{{ old('type_other') }}" class="{{ $input }} mt-2" placeholder="Ketik jenis perangkat, contoh: Walkie Talkie">
+                    @error('type_other') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                     @error('type') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
@@ -92,7 +107,11 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number</label>
-                    <input name="serial_number" value="{{ $field('serial_number') }}" class="{{ $input }}">
+                    <input name="serial_number" value="{{ $field('serial_number') }}" :disabled="noSerial" :class="noSerial ? 'bg-gray-100 text-gray-400' : ''" class="{{ $input }}" :placeholder="noSerial ? 'Tanpa serial number' : ''">
+                    <label class="mt-2 inline-flex items-center gap-2 text-sm text-gray-600">
+                        <input type="checkbox" name="no_serial" value="1" x-model="noSerial" class="rounded border-gray-300">
+                        Tanpa serial number
+                    </label>
                     @error('serial_number') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
@@ -277,9 +296,14 @@
                     <textarea name="notes" rows="3" class="{{ $input }}">{{ $field('notes') }}</textarea>
                 </div>
 
-                <div class="md:col-span-2 flex justify-end gap-2">
-                    <a href="{{ $editing ? route('assets.show', $asset) : route('assets.index') }}" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">Batal</a>
-                    <button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500">Simpan</button>
+                {{-- Simpan di urutan DOM pertama agar menjadi aksi bawaan saat Enter; tampilannya diurutkan dengan order --}}
+                <div class="md:col-span-2 flex flex-wrap justify-end gap-2">
+                    <button class="order-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500">Simpan</button>
+                    <a href="{{ $editing ? route('assets.show', $asset) : route('assets.index') }}" class="order-1 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">Batal</a>
+                    @unless ($editing)
+                        <button name="then" value="copy" class="order-2 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 hover:bg-indigo-100" title="Simpan, lalu buka form baru yang terisi dari aset ini">Simpan &amp; Salin</button>
+                        <button name="then" value="new" class="order-3 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100">Simpan &amp; Tambah Baru</button>
+                    @endunless
                 </div>
             </form>
         </div>

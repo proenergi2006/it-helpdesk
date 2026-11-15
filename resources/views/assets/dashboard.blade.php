@@ -95,7 +95,7 @@
 
             {{-- Sebaran --}}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-                @foreach ([['Jenis', $byType, 'type'], ['Cabang', $byCabang, 'cabang'], ['Departemen', $byDepartment, 'department']] as [$title, $rows, $param])
+                @foreach ([['Jenis', $byType, 'type'], ['Cabang', $byCabang, 'cabang'], ['Departemen Pengguna', $byDepartment, 'user_department']] as [$title, $rows, $param])
                     @php $max = max(1, (int) $rows->max()); @endphp
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Per {{ strtolower($title) }}</div>
@@ -103,7 +103,7 @@
                             @forelse ($rows as $label => $n)
                                 <a href="{{ route('assets.index', [$param => $label]) }}" class="block group">
                                     <div class="flex justify-between text-sm">
-                                        <span class="text-gray-700 group-hover:underline truncate pr-2">{{ $param === 'department' ? (\App\Models\Asset::DEPARTMENTS[$label] ?? $label) : $label }}</span>
+                                        <span class="text-gray-700 group-hover:underline truncate pr-2">{{ $label }}</span>
                                         <span class="font-medium text-gray-900">{{ $n }}</span>
                                     </div>
                                     <div class="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-blue-500" style="width: {{ $n / $max * 100 }}%"></div></div>
@@ -118,7 +118,7 @@
                 <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
                     <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">Kelengkapan data</div>
                     <div class="space-y-2.5 text-sm">
-                        @foreach (['Tanpa pemegang' => $noHolder, 'Tanpa foto' => $noPhoto, 'Tanpa departemen' => $noDepartment, 'Tanpa No. Aset Accurate' => $noAccurate, 'Dokumen belum lengkap (dari 4)' => $docIncomplete] as $label => $n)
+                        @foreach (['Tanpa pemegang' => $noHolder, 'Tanpa foto' => $noPhoto, 'Tanpa departemen pengguna' => $noDepartment, 'Serial number belum diisi' => $noSerial, 'Tanpa No. Aset Accurate' => $noAccurate, 'Dokumen belum lengkap (dari 4)' => $docIncomplete] as $label => $n)
                             <div class="flex justify-between">
                                 <span class="text-gray-700">{{ $label }}</span>
                                 <span class="font-medium {{ $n ? 'text-amber-600' : 'text-emerald-600' }}">{{ $n }}</span>
