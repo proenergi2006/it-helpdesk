@@ -47,7 +47,14 @@ class Asset extends Model
     // Role yang hanya boleh mengelola aset departemennya sendiri. IT melihat semua departemen.
     public const ROLE_DEPARTMENTS = ['ga' => 'GA', 'logistik' => 'LOG'];
 
+    // Asset = CAPEX, Inventory = OPEX
     public const ASSET_CLASSES = ['asset' => 'Asset', 'inventory' => 'Inventory'];
+    public const CLASS_BUDGET = ['asset' => 'CAPEX', 'inventory' => 'OPEX'];
+
+    public static function capexThreshold(): int
+    {
+        return (int) config('helpdesk.capex_threshold', 2000000);
+    }
 
     public const STATUSES = [
         'aktif'     => 'Aktif',
@@ -77,7 +84,7 @@ class Asset extends Model
     protected $fillable = [
         'code', 'legacy_code', 'department', 'subcategory', 'no_serial', 'spec_cpu', 'spec_ram', 'spec_storage', 'spec_os', 'spec_other', 'user_department', 'accurate_no', 'name', 'type', 'brand', 'model', 'serial_number', 'cabang', 'location',
         'asset_class', 'old_asset_no', 'qty', 'acquisition_amount', 'condition_note', 'vat_status',
-        'disposed_at', 'disposal_reason', 'disposal_ba_no', 'disposal_amount',
+        'disposed_at', 'disposal_reason', 'disposal_ba_no', 'disposal_request_no', 'disposal_ref_no', 'disposal_amount',
         'user_id', 'user_name', 'photo_path', 'status', 'purchase_date', 'warranty_until', 'notes', 'created_by',
     ];
 
@@ -190,6 +197,25 @@ class Asset extends Model
             ->max();
 
         return ($max ?? 0) + 1;
+    }
+
+    public function getClassLabelAttribute(): ?string
+    {
+        return $this->asset_class ? self::ASSET_CLASSES[$this->asset_class].' ('.self::CLASS_BUDGET[$this->asset_class].')' : null;
+    }
+
+    // Aset yang klasifikasinya patut ditinjau GA: kosong, Asset murah, Inventory mahal, atau harga belum diisi
+    public function scopeReview($query, string $kind)
+    {
+        $t = self::capexThreshold();
+
+        return match ($kind) {
+            'belum_klasifikasi' => $query->whereNull('asset_class'),
+            'asset_murah'       => $query->where('asset_class', 'asset')->whereNotNull('acquisition_amount')->where('acquisition_amount', '<', $t),
+            'inventory_mahal'   => $query->where('asset_class', 'inventory')->where('acquisition_amount', '>=', $t),
+            'tanpa_harga'       => $query->whereNull('acquisition_amount'),
+            default             => $query,
+        };
     }
 
     public function getDepartmentNameAttribute(): ?string

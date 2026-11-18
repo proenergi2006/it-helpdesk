@@ -19,7 +19,7 @@
             @endif
             <form method="POST" action="{{ $editing ? route('assets.update', $asset) : route('assets.store') }}"
                   enctype="multipart/form-data"
-                  x-data="{ dept: @js($deptInit), type: @js($field('type')), cats: @js(\App\Models\Asset::GA_CATEGORIES), sub: @js($field('subcategory')), noSerial: @js((bool) $field('no_serial')) }"
+                  x-data="{ dept: @js($deptInit), type: @js($field('type')), cats: @js(\App\Models\Asset::GA_CATEGORIES), sub: @js($field('subcategory')), noSerial: @js((bool) $field('no_serial')), klass: @js($field('asset_class')), touched: @js((bool) $field('asset_class')), amount: @js($field('acquisition_amount')), status: @js($field('status', 'aktif')), threshold: {{ \App\Models\Asset::capexThreshold() }} }"
                   class="bg-white rounded-xl shadow p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 @csrf
                 @if ($editing) @method('PUT') @endif
@@ -82,11 +82,24 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" required class="{{ $input }}">
+                    <select name="status" required x-model="status" class="{{ $input }}">
                         @foreach (\App\Models\Asset::STATUSES as $k => $v)
                             <option value="{{ $k }}" @selected($field('status', 'aktif') === $k)>{{ $v }}</option>
                         @endforeach
                     </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status: Asset / Inventory <span x-show="['GA','LOG'].includes(dept) || status === 'disposal'" class="text-red-500">*</span></label>
+                    <select name="asset_class" x-model="klass" @change="touched = true" :required="['GA','LOG'].includes(dept) || status === 'disposal'" class="{{ $input }}">
+                        <option value="">- Pilih -</option>
+                        @foreach (\App\Models\Asset::ASSET_CLASSES as $k => $v)
+                            <option value="{{ $k }}">{{ $v }} ({{ \App\Models\Asset::CLASS_BUDGET[$k] }})</option>
+                        @endforeach
+                    </select>
+                    <p class="text-xs mt-1" :class="klass === 'asset' ? 'text-blue-700' : (klass === 'inventory' ? 'text-amber-700' : 'text-gray-500')"
+                       x-text="klass === 'asset' ? 'Asset masuk CAPEX. Penghapusan perlu permohonan dan Berita Acara.' : (klass === 'inventory' ? 'Inventory masuk OPEX. Penggantian cukup lewat FPU atau PR/PO.' : 'Pembelian di bawah Rp 2 juta pada dasarnya Inventory; barang habis pakai (misal ban truk) tetap Inventory walau di atas Rp 2 juta.')"></p>
+                    @error('asset_class') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                 </div>
 
                 <div>
@@ -169,22 +182,16 @@
                     <div class="text-sm font-semibold text-gray-800 mb-2">Perolehan dan Kondisi <span class="text-xs font-normal text-gray-400">(untuk aset GA / Logistik)</span></div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
-                            <select name="asset_class" class="{{ $input }}">
-                                <option value="">-</option>
-                                @foreach (\App\Models\Asset::ASSET_CLASSES as $k => $v)
-                                    <option value="{{ $k }}" @selected($field('asset_class') === $k)>{{ $v }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
                             <input type="number" min="1" name="qty" value="{{ $field('qty', 1) }}" class="{{ $input }}">
                             @error('qty') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Harga perolehan per unit (Rp)</label>
-                            <input type="number" step="0.01" min="0" name="acquisition_amount" value="{{ $field('acquisition_amount') }}" class="{{ $input }}">
+                            <input type="number" step="0.01" min="0" name="acquisition_amount" value="{{ $field('acquisition_amount') }}" x-model="amount"
+                                   @input="if (!touched && amount !== '') klass = Number(amount) >= threshold ? 'asset' : 'inventory'" class="{{ $input }}">
+                            <p class="text-xs text-gray-500 mt-1" x-show="amount !== '' && amount !== null" x-cloak
+                               x-text="Number(amount) < threshold ? 'Di bawah Rp 2 juta: disarankan Inventory.' : 'Rp 2 juta atau lebih: disarankan Asset, kecuali barang habis pakai.'"></p>
                             @error('acquisition_amount') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                         <div>
@@ -202,24 +209,41 @@
                     </div>
                 </div>
 
-                <div class="md:col-span-2 border-t pt-4">
-                    <div class="text-sm font-semibold text-gray-800 mb-2">Disposal <span class="text-xs font-normal text-gray-400">(diisi bila aset dilepas)</span></div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2 border-t pt-4" x-data="{ req: () => status === 'disposal' && klass === 'asset' }">
+                    <div class="text-sm font-semibold text-gray-800 mb-1">Disposal <span class="text-xs font-normal text-gray-400">(diisi bila aset dilepas)</span></div>
+                    <p class="text-xs text-gray-500 mb-3" x-show="status === 'disposal'" x-cloak>
+                        <span x-show="klass === 'asset'">Disposal Asset (CAPEX) wajib: permohonan penghapusan, Berita Acara, tanggal, dan alasan.</span>
+                        <span x-show="klass === 'inventory'">Inventory (OPEX): cukup nomor FPU atau PR/PO penggantian bila ada.</span>
+                        <span x-show="!klass" class="text-red-600">Tentukan dulu Status: Asset / Inventory.</span>
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                            <input type="date" name="disposed_at" value="{{ $field('disposed_at') }}" class="{{ $input }}">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal <span x-show="req()" class="text-red-500">*</span></label>
+                            <input type="date" name="disposed_at" :required="req()" value="{{ $field('disposed_at') }}" class="{{ $input }}">
+                            @error('disposed_at') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Alasan</label>
-                            <input name="disposal_reason" value="{{ $field('disposal_reason') }}" class="{{ $input }}">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">No. BA</label>
-                            <input name="disposal_ba_no" value="{{ $field('disposal_ba_no') }}" class="{{ $input }}">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alasan <span x-show="req()" class="text-red-500">*</span></label>
+                            <input name="disposal_reason" :required="req()" value="{{ $field('disposal_reason') }}" class="{{ $input }}">
+                            @error('disposal_reason') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Nilai (Rp)</label>
                             <input type="number" step="0.01" min="0" name="disposal_amount" value="{{ $field('disposal_amount') }}" class="{{ $input }}">
+                        </div>
+                        <div x-show="klass !== 'inventory'">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. permohonan penghapusan <span x-show="req()" class="text-red-500">*</span></label>
+                            <input name="disposal_request_no" :required="req()" value="{{ $field('disposal_request_no') }}" class="{{ $input }}">
+                            @error('disposal_request_no') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                        <div x-show="klass !== 'inventory'">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. Berita Acara <span x-show="req()" class="text-red-500">*</span></label>
+                            <input name="disposal_ba_no" :required="req()" value="{{ $field('disposal_ba_no') }}" class="{{ $input }}">
+                            @error('disposal_ba_no') <div class="text-sm text-red-600 mt-1">{{ $message }}</div> @enderror
+                        </div>
+                        <div x-show="klass !== 'asset'">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. FPU / PR-PO penggantian</label>
+                            <input name="disposal_ref_no" value="{{ $field('disposal_ref_no') }}" class="{{ $input }}">
                         </div>
                     </div>
                 </div>

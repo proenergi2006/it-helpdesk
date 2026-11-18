@@ -23,6 +23,7 @@ class AssetController extends Controller
         // kolom format GA / Logistik (boleh dikosongkan untuk aset IT)
         'subkategori', 'no_aset_lama', 'kelas', 'jumlah', 'harga_satuan', 'kondisi', 'status_ppn',
         'tanggal_disposal', 'alasan_disposal', 'no_ba_disposal', 'nilai_disposal',
+        'no_permohonan_penghapusan', 'no_fpu_pr_po',
     ];
 
     // Filter daftar aset (dipakai halaman daftar dan export)
@@ -42,7 +43,10 @@ class AssetController extends Controller
                 ->orWhere('user_name', 'like', $term)
                 ->orWhereHas('user', fn ($u) => $u->where('name', 'like', $term)));
         }
-        foreach (['type', 'cabang', 'status', 'department', 'user_department'] as $f) {
+        if ($request->filled('review')) {
+            $q->review($request->input('review'));
+        }
+        foreach (['type', 'cabang', 'status', 'department', 'user_department', 'asset_class'] as $f) {
             if ($request->filled($f)) {
                 $q->where($f, $request->input($f));
             }
@@ -107,6 +111,10 @@ class AssetController extends Controller
             'noPhoto'          => $live()->whereNull('photo_path')->count(),
             'noDepartment'     => $live()->whereNull('user_department')->count(),
             'noSerial'         => $live()->whereNull('serial_number')->where('no_serial', false)->count(),
+            'capex'            => ['count' => $live()->where('asset_class', 'asset')->count(), 'value' => (float) $live()->where('asset_class', 'asset')->sum(\Illuminate\Support\Facades\DB::raw('coalesce(acquisition_amount, 0) * qty'))],
+            'opex'             => ['count' => $live()->where('asset_class', 'inventory')->count(), 'value' => (float) $live()->where('asset_class', 'inventory')->sum(\Illuminate\Support\Facades\DB::raw('coalesce(acquisition_amount, 0) * qty'))],
+            'reviewCounts'     => collect(['belum_klasifikasi', 'asset_murah', 'inventory_mahal', 'tanpa_harga'])
+                ->mapWithKeys(fn ($k) => [$k => $live()->review($k)->count()]),
             'noAccurate'       => $live()->whereNull('accurate_no')->count(),
             'docIncomplete'    => $live()->where(fn ($q) => $q->whereNull('photo_path')
                 ->orWhereRaw('(select count(*) from asset_documents d where d.asset_id = assets.id) < 3'))->count(),
@@ -227,7 +235,7 @@ class AssetController extends Controller
                 $a->holder_name, $a->user_department, $a->status, $d($a->purchase_date), $d($a->warranty_until),
                 $a->spec_cpu, $a->spec_ram, $a->spec_storage, $a->spec_os, $a->spec_other, $a->notes,
                 $a->subcategory, $a->old_asset_no, $a->asset_class, $a->qty, $a->acquisition_amount, $a->condition_note, $a->vat_status,
-                $d($a->disposed_at), $a->disposal_reason, $a->disposal_ba_no, $a->disposal_amount, $a->no_serial ? 'ya' : '',
+                $d($a->disposed_at), $a->disposal_reason, $a->disposal_ba_no, $a->disposal_amount, $a->disposal_request_no, $a->disposal_ref_no, $a->no_serial ? 'ya' : '',
             ]], null, 'A'.$row++);
         }
 
@@ -258,9 +266,31 @@ class AssetController extends Controller
     {
         $request->validate(['status' => ['required', Rule::in(array_keys(Asset::STATUSES))]]);
         $assets = $this->pickedAssets($request);
+
+        // disposal Asset perlu berita acara dan permohonan penghapusan: hanya lewat Edit. Inventory boleh massal.
+        $skipped = collect();
+        if ($request->status === 'disposal') {
+            $skipped = $assets->filter(fn ($a) => $a->asset_class !== 'inventory');
+            $assets = $assets->reject(fn ($a) => $a->asset_class !== 'inventory');
+        }
         Asset::whereIn('id', $assets->pluck('id'))->update(['status' => $request->status]);
 
-        return back()->with('success', $assets->count().' aset diubah statusnya menjadi '.Asset::STATUSES[$request->status].'.');
+        $msg = $assets->count().' aset diubah statusnya menjadi '.Asset::STATUSES[$request->status].'.';
+        if ($skipped->isNotEmpty()) {
+            $msg .= ' Dilewati '.$skipped->count().' aset yang bukan Inventory: disposal Asset harus lewat Edit dengan No. BA dan permohonan penghapusan.';
+        }
+
+        return back()->with($assets->isNotEmpty() ? 'success' : 'error', $msg);
+    }
+
+    // Ubah klasifikasi Asset / Inventory banyak aset sekaligus (untuk merapikan kekeliruan pencatatan)
+    public function bulkClass(Request $request)
+    {
+        $request->validate(['asset_class' => ['required', Rule::in(array_keys(Asset::ASSET_CLASSES))]]);
+        $assets = $this->pickedAssets($request);
+        Asset::whereIn('id', $assets->pluck('id'))->update(['asset_class' => $request->asset_class]);
+
+        return back()->with('success', $assets->count().' aset diklasifikasikan sebagai '.Asset::ASSET_CLASSES[$request->asset_class].' ('.Asset::CLASS_BUDGET[$request->asset_class].').');
     }
 
     // Pindahkan banyak aset sekaligus; kolom yang dikosongkan tidak diubah. Tiap aset dicatat di riwayat mutasi.
@@ -557,6 +587,8 @@ class AssetController extends Controller
                 'disposal_reason' => ($data['alasan_disposal'] ?? '') ?: null,
                 'disposal_ba_no' => ($data['no_ba_disposal'] ?? '') ?: null,
                 'disposal_amount' => $this->parseMoney($data['nilai_disposal'] ?? ''),
+                'disposal_request_no' => ($data['no_permohonan_penghapusan'] ?? '') ?: null,
+                'disposal_ref_no' => ($data['no_fpu_pr_po'] ?? '') ?: null,
             ];
 
             $dept = strtoupper($data['departemen'] ?? '');
@@ -654,7 +686,7 @@ class AssetController extends Controller
             'action'         => ['nullable', 'string', 'max:2000'],
             'vendor'         => ['nullable', 'string', 'max:150'],
             'ticket_id'      => ['nullable', 'integer', Rule::exists('tickets', 'id')->where('asset_id', $asset->id)],
-            'status_after'   => ['nullable', Rule::in(array_keys(Asset::STATUSES))],
+            'status_after'   => ['nullable', Rule::in(array_diff(array_keys(Asset::STATUSES), ['disposal']))],
             'photos'         => ['nullable', 'array', 'max:10'],
             'photos.*'       => ['file', 'mimes:jpg,jpeg', 'max:5120'],
             'ticket_photos'  => ['nullable', 'array'],
@@ -922,18 +954,24 @@ class AssetController extends Controller
             $request->merge(['serial_number' => null]);
         }
 
+        // Disposal Asset (CAPEX) wajib lengkap dengan permohonan penghapusan dan berita acara; Inventory (OPEX) tidak seketat itu
+        $isAssetDisposal = fn () => $request->input('status') === 'disposal' && $request->input('asset_class') === 'asset';
+        $needsClass = fn () => in_array($request->input('department'), ['GA', 'LOG'], true) || $request->input('status') === 'disposal';
+
         $data = $request->validate([
+            'disposal_request_no' => [Rule::requiredIf($isAssetDisposal), 'nullable', 'string', 'max:100'],
+            'disposal_ref_no'     => ['nullable', 'string', 'max:100'],
             'no_serial'      => ['nullable', 'boolean'],
             'type_other'     => ['nullable', 'string', 'max:50'],
-            'asset_class'    => ['nullable', Rule::in(array_keys(Asset::ASSET_CLASSES))],
+            'asset_class'    => [Rule::requiredIf($needsClass), 'nullable', Rule::in(array_keys(Asset::ASSET_CLASSES))],
             'old_asset_no'   => ['nullable', 'string', 'max:60'],
             'qty'            => ['nullable', 'integer', 'min:1', 'max:100000'],
             'acquisition_amount' => ['nullable', 'numeric', 'min:0'],
             'condition_note' => ['nullable', 'string', 'max:2000'],
             'vat_status'     => ['nullable', 'string', 'max:50'],
-            'disposed_at'    => ['nullable', 'date'],
-            'disposal_reason' => ['nullable', 'string', 'max:255'],
-            'disposal_ba_no' => ['nullable', 'string', 'max:100'],
+            'disposed_at'    => [Rule::requiredIf($isAssetDisposal), 'nullable', 'date'],
+            'disposal_reason' => [Rule::requiredIf($isAssetDisposal), 'nullable', 'string', 'max:255'],
+            'disposal_ba_no' => [Rule::requiredIf($isAssetDisposal), 'nullable', 'string', 'max:100'],
             'disposal_amount' => ['nullable', 'numeric', 'min:0'],
             'name'           => ['required', 'string', 'max:255'],
             'type'           => ['required', 'string', 'max:50'],
@@ -963,6 +1001,11 @@ class AssetController extends Controller
             'photo'          => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             'remove_photo'   => ['nullable', 'boolean'],
         ], [
+            'asset_class.required' => 'Pilih klasifikasi: Asset (CAPEX) atau Inventory (OPEX).',
+            'disposal_request_no.required' => 'Disposal Asset wajib mengisi No. permohonan penghapusan.',
+            'disposed_at.required'         => 'Disposal Asset wajib mengisi tanggal disposal.',
+            'disposal_reason.required'     => 'Disposal Asset wajib mengisi alasan.',
+            'disposal_ba_no.required'      => 'Disposal Asset wajib mengisi No. Berita Acara.',
             'photo.image' => 'Foto harus berupa gambar.',
             'photo.mimes' => 'Foto harus berformat JPG, PNG, atau WEBP.',
             'photo.max'   => 'Ukuran foto maksimal 3 MB.',

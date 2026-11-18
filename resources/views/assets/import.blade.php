@@ -22,6 +22,7 @@
                     <li>Kolom status: aktif, dipinjam, rusak, diperbaiki, disposal. Tanggal format <code>2024-03-15</code>.</li>
                     <li>Aset GA / Logistik: gunakan kolom <strong>kategori</strong> (atau jenis) dan <strong>subkategori</strong>, <strong>kelas</strong> (asset / inventory), <strong>jumlah</strong>, <strong>harga_satuan</strong>, <strong>kondisi</strong>, <strong>no_aset_lama</strong>, <strong>status_ppn</strong>, dan kolom disposal. User GA dan Logistik hanya bisa mengimpor aset departemennya sendiri.</li>
                     <li>Hasil <strong>Export Excel</strong> dari daftar aset bisa diedit lalu diimpor kembali: kolom <strong>kode_aset</strong> yang terisi memperbarui aset yang sama (perubahan cabang/lokasi/pengguna dicatat sebagai mutasi). Kolom <strong>tanpa_serial</strong> diisi <em>ya</em> untuk perangkat yang memang tidak punya serial number.</li>
+                    <li>Kolom <strong>kelas</strong>: <em>asset</em> (CAPEX) atau <em>inventory</em> (OPEX). Disposal Asset memerlukan <strong>no_permohonan_penghapusan</strong> dan <strong>no_ba_disposal</strong>; Inventory cukup <strong>no_fpu_pr_po</strong>.</li>
                     <li>Format file: .xlsx, .xls, atau .csv (maksimal 5 MB).</li>
                 </ol>
 

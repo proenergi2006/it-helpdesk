@@ -93,6 +93,38 @@
                 </div>
             </div>
 
+            {{-- CAPEX / OPEX dan klasifikasi --}}
+            @php $rp = fn ($n) => 'Rp '.number_format($n, 0, ',', '.'); $threshold = \App\Models\Asset::capexThreshold(); @endphp
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <a href="{{ route('assets.index', ['asset_class' => 'asset']) }}" class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5 hover:ring-blue-200 transition">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Asset (CAPEX)</div>
+                    <div class="mt-2 text-2xl font-semibold text-gray-900">{{ $rp($capex['value']) }}</div>
+                    <div class="text-sm text-gray-500 mt-0.5">{{ $capex['count'] }} aset aktif</div>
+                </a>
+                <a href="{{ route('assets.index', ['asset_class' => 'inventory']) }}" class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5 hover:ring-amber-200 transition">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Inventory (OPEX)</div>
+                    <div class="mt-2 text-2xl font-semibold text-gray-900">{{ $rp($opex['value']) }}</div>
+                    <div class="text-sm text-gray-500 mt-0.5">{{ $opex['count'] }} aset aktif</div>
+                </a>
+                <div class="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-5">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Review klasifikasi</div>
+                    <p class="text-xs text-gray-400 mb-3">Batas Asset: {{ $rp($threshold) }} per unit. Pengecualian (barang habis pakai) dinilai GA.</p>
+                    <div class="space-y-2 text-sm">
+                        @foreach ([
+                            'belum_klasifikasi' => 'Belum diklasifikasi',
+                            'asset_murah'       => 'Asset di bawah '.$rp($threshold).' (mungkin Inventory)',
+                            'inventory_mahal'   => 'Inventory '.$rp($threshold).' atau lebih (cek habis pakai)',
+                            'tanpa_harga'       => 'Harga belum diisi',
+                        ] as $key => $label)
+                            <a href="{{ route('assets.index', ['review' => $key]) }}" class="flex justify-between gap-3 hover:underline">
+                                <span class="text-gray-700">{{ $label }}</span>
+                                <span class="font-medium {{ $reviewCounts[$key] ? 'text-amber-600' : 'text-emerald-600' }}">{{ $reviewCounts[$key] }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
             {{-- Sebaran --}}
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                 @foreach ([['Jenis', $byType, 'type'], ['Cabang', $byCabang, 'cabang'], ['Departemen Pengguna', $byDepartment, 'user_department']] as [$title, $rows, $param])

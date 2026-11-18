@@ -28,7 +28,7 @@ class AssetGaTemplate
         'cabang'           => [16, true,  'Pilih dari daftar. Dipakai membentuk kode aset.'],
         'lokasi'           => [28, false, 'Ruangan / sub lokasi, contoh: Office Pontianak.'],
         'pengguna'         => [20, false, 'PIC / pemegang. Nama atau email akun; bila tidak ada akunnya disimpan sebagai teks.'],
-        'kelas'            => [12, false, 'asset atau inventory.'],
+        'kelas'            => [12, true,  'asset (CAPEX) atau inventory (OPEX). Pembelian di bawah Rp 2 juta pada dasarnya inventory; barang habis pakai (misal ban truk) tetap inventory.'],
         'jumlah'           => [10, false, 'Angka, minimal 1.'],
         'harga_satuan'     => [16, false, 'Harga perolehan per unit, angka saja, contoh: 4700000.'],
         'tanggal_beli'     => [14, false, 'Format 2025-07-20 (tahun-bulan-tanggal) atau tanggal biasa Excel.'],
@@ -39,6 +39,8 @@ class AssetGaTemplate
         'alasan_disposal'  => [24, false, ''],
         'no_ba_disposal'   => [18, false, 'Nomor Berita Acara disposal.'],
         'nilai_disposal'   => [16, false, 'Angka saja.'],
+        'no_permohonan_penghapusan' => [26, false, 'Wajib untuk disposal Asset (CAPEX), bersama No. BA.'],
+        'no_fpu_pr_po'     => [20, false, 'Untuk Inventory: nomor FPU atau PR/PO penggantian.'],
         'catatan'          => [30, false, ''],
     ];
 
